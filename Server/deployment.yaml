@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pidserver
+  labels:
+    app: pidserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pidserver
+  template:
+    metadata:
+      labels:
+        app: pidserver
+    spec:
+      containers:
+      - name: pidserver
+        image: szefoka/pidserver
+        ports:
+        - containerPort: 5000
+        resources:
+          limits:
+            cpu: "100m"
