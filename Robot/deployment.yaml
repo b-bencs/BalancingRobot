@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot
+  labels:
+    app: robot
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: robot
+  template:
+    metadata:
+      labels:
+        app: robot
+    spec:
+      containers:
+      - name: robot
+        image: szefoka/robotcontainer

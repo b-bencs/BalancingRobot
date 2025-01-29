@@ -7,10 +7,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <thread>
+#include <unistd.h>
+#include <limits.h>
 #include "ibalancingbot.cpp"
 #include "pid.cpp"
 #include "http_pid.cpp"
-# define M_PI           3.14159265358979323846  /* pi */
+#include "influxdbwriter.cpp"
+#define M_PI           3.14159265358979323846  /* pi */
 
 long long ref_time = 0;
 long long response_timeout = 1;
@@ -57,6 +60,7 @@ auto start_t = std::chrono::steady_clock::now();
 HTTP_PID myPIDphi = HTTP_PID("http://10.44.0.7:5000/pid");
 HTTP_PID myPIDx = HTTP_PID("http://10.44.0.7:5000/pid");
 HTTP_PID myPIDpsi = HTTP_PID("http://10.44.0.7:5000/pid");
+InfluxDBWriter influxdbwriter;
 
 using namespace std::literals::chrono_literals;
 
@@ -224,7 +228,8 @@ void animation() {
         //glutPostRedisplay();  // refresh the display
         ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
 	std::this_thread::sleep_for(10ms);
-	std::cout<<myBot.phi<<std::endl;
+	influxdbwriter.Write(myBot.phi);
+	//std::cout<<myBot.phi<<std::endl;
     }
 }
 
@@ -303,6 +308,11 @@ void SpecialFunc(int skey, int x, int y) {
 }*/
 
 int main(int argc, char** argv) {
+    char hostname[HOST_NAME_MAX];
+    gethostname(hostname, HOST_NAME_MAX);
+    //influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"));
+    influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"), std::string(hostname));
+    //influxdbwriter = InfluxDBWriter("http://influxdb.default.svc.cluster.local:8086", "robot", hostname);
     if(argc > 1) {
         response_timeout = std::atoll(argv[1]);
     }

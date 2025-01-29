@@ -1,0 +1,29 @@
+#ifndef INFLUXDBWRITER
+#define INFLUXDBWRITER
+
+#include <iostream>
+#include <string>
+#include <InfluxDBFactory.h>
+
+struct InfluxDBWriter {
+    //influxdb::InfluxDB* db;
+    std::unique_ptr<influxdb::InfluxDB> db;
+    std::string influx_address;
+    std::string db_name;
+    std::string robotname;
+    InfluxDBWriter() {}
+    //InfluxDBWriter(std::string influx_address, std::string db_name, std::string robot_name) : influx_address(influx_address), db_name(db_name), robotname(robotname) {
+    InfluxDBWriter(std::string influx_address, std::string db_name, std::string robotname) {
+        this->robotname = robotname;
+        std::string db_connection_string = influx_address + "?db=" + db_name;
+        db = influxdb::InfluxDBFactory::Get(db_connection_string.c_str());
+        db->createDatabaseIfNotExists();
+    }
+
+    //TODO: make it nice....
+    void Write(float angle) {
+        db->write(influxdb::Point{"angle"}.addTag("robotname",robotname).addField("value",angle));
+    }
+};
+
+#endif
