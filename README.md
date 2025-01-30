@@ -136,12 +136,17 @@ Let's focus on the following lines:
   173874.035654 [0007]  python3[365986]                     0.047      0.002      0.812 
    ```
 We can see that the main thread 253155 started 365985 that was running for 6.360 + 0.868ms, then it has sent the PID response to the robot.
+
 Then 253155 received another request and started 365986 that was running for 5.084 + 0.812ms to calculate the return value.
+
 The first column shows the time when the given event has happened.
+
 The first line indicates that the invocation request arrived at around 173873.031480 (sec.us) Then the second invocation arrived at 173874.029989 just a second later.
+
 If you examine the output a bit more, you can see that the time needed to calculate the PID value is around 6-7ms.
 
 Now, that we know the time the software needs we can adjust the response timeout of our robot. We know that it calls the PID server 3 times, that means something between 18-21 ms. However we need to consider the network delay, so let's add a couple of milliseconds more. 
+
 From here it should be easy to configure the robot....
 
 ## Robot with graphical output - Only for local testing
