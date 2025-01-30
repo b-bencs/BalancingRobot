@@ -21,9 +21,10 @@ struct InfluxDBWriter {
     }
 
     //TODO: make it nice....
-    void Write(float angle) {
-        db->write(influxdb::Point{"angle"}.addTag("robotname",robotname).addField("value",angle));
+    void Write(float angle, bool timeout_happened) {
+        db->write(influxdb::Point{"angle"}.addTag("robotname",robotname).addField("timeout", timeout_happened ? 1 : 0).addField("value",angle));
     }
 };
 
 #endif
+

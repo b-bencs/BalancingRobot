@@ -5,7 +5,7 @@ metadata:
   labels:
     app: robot
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: robot
@@ -17,3 +17,4 @@ spec:
       containers:
       - name: robot
         image: szefoka/robotcontainer
+        command: ["./myapp", "20"]

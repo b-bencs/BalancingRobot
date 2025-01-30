@@ -61,6 +61,7 @@ HTTP_PID myPIDphi = HTTP_PID("http://10.44.0.7:5000/pid");
 HTTP_PID myPIDx = HTTP_PID("http://10.44.0.7:5000/pid");
 HTTP_PID myPIDpsi = HTTP_PID("http://10.44.0.7:5000/pid");
 InfluxDBWriter influxdbwriter;
+bool timeout_happened = false;
 
 using namespace std::literals::chrono_literals;
 
@@ -155,8 +156,9 @@ void correction() {
     std::unique_lock<std::mutex> l(m);
     if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
 	//t.join();
-	printf("runtime_error timeout\n");
+	//printf("runtime_error timeout\n");
 	//throw std::runtime_error("Timeout");
+	std::cout<<response_timeout<<std::endl;
 	throw std::exception();
     }
 }
@@ -185,12 +187,13 @@ void timeoutCorrection() {
     //catch(std::runtime_error& e) {
     catch(...) {
 	//printf("runtime_error timeout\n");
-	myPIDx = copyMyPIDx;
-	myPIDpsi = copyMyPIDpsi;
-	myPIDphi = copyMyPIDphi;
-	rotation = copyRotation;
-	F[0] = copyF[0];
-	F[1] = copyF[1];
+	timeout_happened = true;
+        myPIDx = copyMyPIDx;
+        myPIDpsi = copyMyPIDpsi;
+        myPIDphi = copyMyPIDphi;
+        rotation = copyRotation;
+        F[0] = copyF[0];
+        F[1] = copyF[1];
     }
 }
 
@@ -228,7 +231,8 @@ void animation() {
         //glutPostRedisplay();  // refresh the display
         ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
 	std::this_thread::sleep_for(10ms);
-	influxdbwriter.Write(myBot.phi);
+	influxdbwriter.Write(myBot.phi, timeout_happened);
+	timeout_happened = false;
 	//std::cout<<myBot.phi<<std::endl;
     }
 }

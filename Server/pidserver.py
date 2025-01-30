@@ -19,9 +19,9 @@ def pid():
     """
     if request.method == 'POST':
         d = request.get_data()
-        print(d.decode())
+        #print(d.decode())
         d = json.loads(d.decode())
-        print(type(d))
+        #print(type(d))
 
         error = d["set_point"] - d["current_value"]
 
@@ -53,4 +53,4 @@ def pid():
         return json.dumps(ret_dict)
 
 if __name__ == '__main__':  
-   app.run("0.0.0.0", port=5000, threaded=False)
+   app.run("0.0.0.0", port=5000, threaded=False, processes=16)
