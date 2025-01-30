@@ -141,7 +141,7 @@ Then 253155 received another request and started 365986 that was running for 5.0
 
 The first column shows the time when the given event has happened.
 
-The first line indicates that the invocation request arrived at around 173873.031480 (sec.us) Then the second invocation arrived at 173874.029989 just a second later.
+The first line indicates that the invocation request arrived at around 173873.031480 (sec.usec) Then the second invocation arrived at 173874.029989 just a second later.
 
 If you examine the output a bit more, you can see that the time needed to calculate the PID value is around 6-7ms.
 
