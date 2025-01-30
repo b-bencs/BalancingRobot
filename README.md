@@ -60,6 +60,89 @@ Command explanation:
    ```
    kubectl get services
    ```
+So we should open two terminal windows. In one we will be signed in to our Kubernetes master node, in the other we will be signed in to our Kubernetes worker node.
+On the worker node we issue this huge command:
+   ```
+   perf record -a --per-thread  -e sched:sched_switch  -e sched:sched_stat_sleep -e sched:sched_stat_wait -e sched:sched_process_wait -e sched:sched_stat_blocked -e sched:sched_process_exec -e sched:sched_process_fork -e sched:sched_process_exit -e sched:sched_stat_runtime -e sched:sched_wakeup -e sched:sched_wakeup_new -e sched:sched_waking -eworkqueue:workqueue_{queue_work,activate_work,execute_start,execute_end}
+   ```
+While on the master node we issue the Hey command from above. But I know that you are lazy to scroll back, so here it is:
+   ```
+   ./hey_linux_amd64 -c 1 -n 10 -q 1 -m POST -d {"Derivator":-0.7239541411399841,"Integrator":-3.0,"Integrator_max":3.0,"Integrator_min":-3.0,"Kd":6.0,"Ki":0.10000000149011612,"Kp":7.0,"current_value":0.08886042982339859,"set_point":0.0} -o csv http://10.96.52.184:5000/pid
+   ```
+After Hey has returned, we switch to the worker node and press Ctrl+C to stop the perf record command
+To see what we have recoreded the following is needed
+   ```
+   perf sched timehist| grep python
+   ```
+You will see something like this:
+   ```
+           time    cpu  task name                       wait time  sch delay   run time
+                        [tid/pid]                          (msec)     (msec)     (msec)
+--------------- ------  ------------------------------  ---------  ---------  ---------
+  173873.031480 [0006]  python3[253155]                   293.044      0.001      1.181 
+  173873.037522 [0007]  python3[365985]                     0.000      0.002      6.360 
+  173873.038516 [0007]  python3[365985]                     0.126      0.002      0.868 
+  173873.531724 [0006]  python3[253155]                   500.205      0.002      0.038 
+  173874.029989 [0006]  python3[253155]                   497.491      0.001      0.773 
+  173874.034794 [0007]  python3[365986]                     0.000      0.002      5.084 
+  173874.035654 [0007]  python3[365986]                     0.047      0.002      0.812 
+  173874.530536 [0006]  python3[253155]                   500.488      0.001      0.059 
+  173875.030314 [0006]  python3[253155]                   498.780      0.001      0.997 
+  173875.036138 [0000]  python3[365987]                     0.000      0.002      6.116 
+  173875.037016 [0000]  python3[365987]                     0.011      0.002      0.865 
+  173875.530859 [0006]  python3[253155]                   500.492      0.001      0.051 
+  173876.030329 [0006]  python3[253155]                   498.698      0.001      0.771 
+  173876.035594 [0007]  python3[365989]                     0.000      0.002      5.540 
+  173876.036469 [0007]  python3[365989]                     0.026      0.002      0.848 
+  173876.530878 [0006]  python3[253155]                   500.490      0.001      0.057 
+  173877.030069 [0006]  python3[253155]                   498.320      0.001      0.871 
+  173877.035325 [0007]  python3[365990]                     0.000      0.002      5.544 
+  173877.036210 [0007]  python3[365990]                     0.043      0.002      0.841 
+  173877.530627 [0006]  python3[253155]                   500.489      0.001      0.068 
+  173878.030325 [0006]  python3[253155]                   498.641      0.001      1.056 
+  173878.036157 [0007]  python3[365991]                     0.000      0.002      6.126 
+  173878.037022 [0007]  python3[365991]                     0.006      0.002      0.858 
+  173878.530861 [0006]  python3[253155]                   500.488      0.001      0.047 
+  173879.030356 [0006]  python3[253155]                   498.603      0.001      0.891 
+  173879.035839 [0007]  python3[365992]                     0.000      0.002      5.765 
+  173879.036738 [0007]  python3[365992]                     0.047      0.002      0.851 
+  173879.530898 [0006]  python3[253155]                   500.486      0.001      0.054 
+  173880.030068 [0006]  python3[253155]                   498.324      0.001      0.845 
+  173880.035294 [0007]  python3[365993]                     0.000      0.002      5.514 
+  173880.036176 [0007]  python3[365993]                     0.035      0.002      0.845 
+  173880.530612 [0006]  python3[253155]                   500.491      0.003      0.053 
+  173881.029762 [0006]  python3[253155]                   498.437      0.001      0.712 
+  173881.034333 [0007]  python3[365994]                     0.000      0.002      4.812 
+  173881.035162 [0007]  python3[365994]                     0.040      0.002      0.789 
+  173881.530304 [0006]  python3[253155]                   500.488      0.001      0.053 
+  173882.029748 [0006]  python3[253155]                   498.693      0.001      0.751 
+  173882.034607 [0007]  python3[365995]                     0.000      0.002      5.102 
+  173882.035451 [0007]  python3[365995]                     0.020      0.002      0.824 
+  173882.530306 [0006]  python3[253155]                   500.491      0.001      0.066 
+  173883.030820 [0006]  python3[253155]                   500.490      0.003      0.023 
+  173883.531326 [0006]  python3[253155]                   500.488      0.001      0.017 
+  173884.031469 [0006]  python3[253155]                   500.123      0.001      0.019 
+  173884.532018 [0006]  python3[253155]                   500.496      0.001      0.052 
+   ```
+Let me explain, what is that thingy up there. We can see the behaviour of the PID server under the load that we have generated. The PID server is a multi-threaded python flask server, that has a main thread, if you watch it carefully you can see that PID (now process id) 253155 is returning. This is the main thread of the PID server. The rest of the PIDs are python processes that are started by the main thread and responsible for serving the invocation requests. 
+Let's focus on the following lines:
+   ```
+  173873.031480 [0006]  python3[253155]                   293.044      0.001      1.181 
+  173873.037522 [0007]  python3[365985]                     0.000      0.002      6.360 
+  173873.038516 [0007]  python3[365985]                     0.126      0.002      0.868 
+  173873.531724 [0006]  python3[253155]                   500.205      0.002      0.038 
+  173874.029989 [0006]  python3[253155]                   497.491      0.001      0.773 
+  173874.034794 [0007]  python3[365986]                     0.000      0.002      5.084 
+  173874.035654 [0007]  python3[365986]                     0.047      0.002      0.812 
+   ```
+We can see that the main thread 253155 started 365985 that was running for 6.360 + 0.868ms, then it has sent the PID response to the robot.
+Then 253155 received another request and started 365986 that was running for 5.084 + 0.812ms to calculate the return value.
+The first column shows the time when the given event has happened.
+The first line indicates that the invocation request arrived at around 173873.031480 (sec.us) Then the second invocation arrived at 173874.029989 just a second later.
+If you examine the output a bit more, you can see that the time needed to calculate the PID value is around 6-7ms.
+
+Now, that we know the time the software needs we can adjust the response timeout of our robot. We know that it calls the PID server 3 times, that means something between 18-21 ms. However we need to consider the network delay, so let's add a couple of milliseconds more. 
+From here it should be easy to configure the robot....
 
 ## Robot with graphical output - Only for local testing
 
