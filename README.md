@@ -151,7 +151,7 @@ From here it should be easy to configure the robot....
 
 We can also adjust the CPU consumption of the PID server. We know that the scheduling window of the Linux CFS scheduler is set to 100ms by default on Ubuntu. So in this case we have N milliseconds in a 100ms long scheduling window. If we have a multi-core CPU we can add more than 100ms of runtime in the 100ms scheduling window.
 
-We know that the PID server runs for 6-7 milliseconds to be able to serve a single request. We also know that the robot invokes it 3 times in one "balancing" cycle, therefore if we have a single robot that invokes the PID server 3 times every 100ms (Robot/main.cpp:215), we need to set the PID server's minimum CPU consumption to somewhere between 18-21ms in 100ms, that translates to 21% of CPU usage. However, if we scale out the robot, we need to increase the PID server's CPU consumption accordingly. This means 36-42% in case of 2 and 54-63% in case of 3 robots, etc.
+We know that the PID server runs for 6-7 milliseconds to be able to serve a single request. We also know that the robot invokes it 3 times in one "balancing" cycle, therefore if we have a single robot that invokes the PID server 3 times every 100ms (Robot/main.cpp:215), we need to set the PID server's minimum CPU consumption to somewhere between 18-21ms in a 100ms long scheduling window, which translates to 21% of CPU usage. However, if we scale out the robot, we need to increase the PID server's CPU allocation accordingly. This means 36-42% in case of 2 and 54-63% in case of 3 robots, etc.
 
 ## Robot with graphical output - Only for local testing
 
