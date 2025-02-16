@@ -1,2 +1,2 @@
-docker build -t szefoka/pidserver .
-docker push szefoka/pidserver
+docker build -t szefoka/edf-pidserver .
+docker push szefoka/edf-pidserver

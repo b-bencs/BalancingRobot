@@ -16,9 +16,27 @@ spec:
     spec:
       containers:
       - name: pidserver
-        image: szefoka/pidserver
+        image: szefoka/edf-pidserver
         ports:
         - containerPort: 5000
         resources:
           limits:
-            cpu: "320m"
+            cpu: "40m"
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: RT
+          value: ""
+        - name: RUNTIME
+          value: "4"
+        - name: DEADLINE
+          value: "100"
+        - name: PERIOD
+          value: "100"
+        - name: THREADED
+          value: ""
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      nodeSelector:
+        job: pid

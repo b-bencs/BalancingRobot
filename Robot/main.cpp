@@ -123,44 +123,79 @@ void _correction() {
     }
 }
 
+/*struct correctionReturnStruct {
+    HTTP_PID copyMyPIDx;
+    HTTP_PID copyMyPIDpsi;
+    HTTP_PID copyMyPIDphi;
+
+    float copyRotation;
+    float copyF[2];
+};*/
+
 void correction() {
     std::mutex m;
     std::condition_variable cv;
-    
+
+    //correctionReturnStruct ret;
+    HTTP_PID copyMyPIDx(myPIDx);
+    HTTP_PID copyMyPIDpsi(myPIDpsi);
+    HTTP_PID copyMyPIDphi(myPIDphi);
+    float copyRotation = rotation;
+    float copyF[2];
+    copyF[0] = F[0];
+    copyF[1] = F[1];
+
+    //std::thread t([&cv, &copyMyPIDx, &copyMyPIDpsi, &copyMyPIDphi, &copyRotation, &copyF]() {
     std::thread t([&cv]() {
-	try {
-	    float pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
-	    float pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
+    	try {
+    	    float pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
+    	    float pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
+    	    //float pidx_value = copyMyPIDx.update(myBot.xp);  // Pid over linear a speed
+    	    //float pidpsi_value = copyMyPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
 
-	    float tilt = - pidx_value + myBot.phi;
-	    rotation = pidpsi_value;
+    	    float tilt = - pidx_value + myBot.phi;
+    	    rotation = pidpsi_value;
+    	    //copyRotation = pidpsi_value;
 
-	    float pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
+    	    float pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
+    	    //float pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
 
-	    F[0] = -pidphi_value-rotation;
-	    F[1] = -pidphi_value+rotation;
-	    // Since there is no webserver, we simulate the missed requests randomly
-	    /*if(!(rand()%20)) {
-		std::this_thread::sleep_for(11ms);
-	    }*/
-	    cv.notify_one();
-	}
-	catch (...) {
-	    std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
-	    //std::this_thread::sleep_for(5ms);
-	}
+    	    F[0] = -pidphi_value-rotation;
+    	    F[1] = -pidphi_value+rotation;
+    	    //copyF[0] = -pidphi_value-copyRotation;
+    	    //copyF[1] = -pidphi_value+copyRotation;
+    	    // Since there is no webserver, we simulate the missed requests randomly
+    	    /*if(!(rand()%20)) {
+    		std::this_thread::sleep_for(11ms);
+    	    }*/
+    	    cv.notify_one();
+    	}
+    	//Cetches JSON parse error, and sleeps until the timeout passes
+    	catch (...) {
+    	    std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
+    	    //std::this_thread::sleep_for(5ms);
+    	}
     });
     
     t.detach();
 
     std::unique_lock<std::mutex> l(m);
-    if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
-	//t.join();
-	//printf("runtime_error timeout\n");
-	//throw std::runtime_error("Timeout");
-	std::cout<<response_timeout<<std::endl;
-	throw std::exception();
+    //if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
+    if(cv.wait_for(l, std::chrono::milliseconds(response_timeout)) == std::cv_status::timeout) {
+    	//t.join();
+    	//printf("runtime_error timeout\n");
+    	//throw std::runtime_error("Timeout");
+        //t.join();
+    	std::cout<<response_timeout<<std::endl;
+    	throw std::exception();
+    	//throw std::runtime_error("Timeout");
     }
+    /*myPIDx = copyMyPIDx;
+    myPIDpsi = copyMyPIDpsi;
+    myPIDphi = copyMyPIDphi;
+    rotation = copyRotation;
+    F[0] = copyF[0];
+    F[1] = copyF[1];*/
 }
 
 void timeoutCorrection() {
@@ -182,12 +217,13 @@ void timeoutCorrection() {
     copyF[0] = F[0];
     copyF[1] = F[1];
     try {
-	correction();
+	    correction();
     }
     //catch(std::runtime_error& e) {
     catch(...) {
 	//printf("runtime_error timeout\n");
-	timeout_happened = true;
+    	std::this_thread::sleep_for(10ms);
+    	timeout_happened = true;
         myPIDx = copyMyPIDx;
         myPIDpsi = copyMyPIDpsi;
         myPIDphi = copyMyPIDphi;
@@ -199,10 +235,10 @@ void timeoutCorrection() {
 
 void threadCorrection() {
     while(true) {
-	//if (glutGet(GLUT_ELAPSED_TIME)-ref_time > (1.0/FPS)*1000) {
-	if (getElapsedTime()-ref_time > (1.0/FPS)*1000) {
-	    correction();
-	}
+    	//if (glutGet(GLUT_ELAPSED_TIME)-ref_time > (1.0/FPS)*1000) {
+    	if (getElapsedTime()-ref_time > (1.0/FPS)*1000) {
+    	    correction();
+    	}
     }
 }
 
@@ -226,11 +262,11 @@ void animation() {
             posx += dst*cos(myBot.psi);
             posz += (-dst*sin(myBot.psi));
 	}
-        //correction();  // calls the PIDs if enable
+    //correction();  // calls the PIDs if enable
 	timeoutCorrection();
-        //glutPostRedisplay();  // refresh the display
-        ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
-	std::this_thread::sleep_for(10ms);
+    //glutPostRedisplay();  // refresh the display
+    ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
+	//std::this_thread::sleep_for(10ms);
 	influxdbwriter.Write(myBot.phi, timeout_happened);
 	timeout_happened = false;
 	//std::cout<<myBot.phi<<std::endl;

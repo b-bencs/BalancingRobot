@@ -3,6 +3,7 @@
 
 #include "pid.cpp"
 #include "webclient.cpp"
+#include <time.h>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -28,16 +29,19 @@ struct HTTP_PID : PID {
     }
     
     HTTP_PID& operator=(const HTTP_PID& p) {
-	if(this != &p) {
-	    (PID)*this = (PID)p;
-	    serveraddr = p.serveraddr;
+    if(this != &p) {
+        (PID)*this = (PID)p;
+        serveraddr = p.serveraddr;
 	}
 	return *this;
     }
     
     float update(float current_value) {
+    struct timespec ts;
+    timespec_get(&ts, CLOCK_TAI);
 	json data = json::object({
-				    {"current_value", current_value}, 
+	                {"time", 1000000000*ts.tv_sec+ts.tv_nsec},
+				    {"current_value", current_value},
 				    {"set_point", set_point},
 				    {"Kp", Kp},
 				    {"Ki", Ki},

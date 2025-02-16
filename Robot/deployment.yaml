@@ -16,5 +16,7 @@ spec:
     spec:
       containers:
       - name: robot
-        image: szefoka/robotcontainer
-        command: ["./myapp", "20"]
+        image: szefoka/edfrobotcontainer
+        command: ["./myapp", "6"]
+      nodeSelector:
+        job: "robot"
