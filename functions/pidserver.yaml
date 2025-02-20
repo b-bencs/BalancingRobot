@@ -3,10 +3,10 @@ provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
 functions:
-  pidsever:
+  pidserver:
     lang: python3-edf
     handler: ./pidserver
-    image: szefoka/pidsever:latest
+    image: szefoka/pidserver:latest
     EDF:
       runtime: "50"
       deadline: "1000"

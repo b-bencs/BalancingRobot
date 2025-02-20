@@ -82,6 +82,7 @@ struct HTTP_PID : PID {
     }
 };
 
-WebClient HTTP_PID::wc = WebClient("http://pidserver.default.svc.cluster.local:5000/pid");
+//WebClient HTTP_PID::wc = WebClient("http://pidserver.default.svc.cluster.local:5000/pid");
+WebClient HTTP_PID::wc = WebClient("http://pidserver.openfaas.svc.cluster.local:8080/pid");
 
 #endif
