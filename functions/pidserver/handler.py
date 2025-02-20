@@ -1,7 +1,7 @@
 import json
 
 def handle(req):
-    d = json.loads(d.decode())
+    d = json.loads(req)
     error = d["set_point"] - d["current_value"]
 
     P_value = d["Kp"] * error
