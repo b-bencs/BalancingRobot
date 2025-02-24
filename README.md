@@ -31,6 +31,76 @@
    kubectl apply -f deployment.yaml
    kubectl apply -f service.yaml
    ```
+## Run the PID server on top of OpenFaaS
+
+1. Install openfaas by using the modified faas-netes module
+   ```
+   curl -sSLf https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+   kubectl apply -f https://raw.githubusercontent.com/openfaas/faas-netes/master/namespaces.yml
+   helm repo add openfaas https://openfaas.github.io/faas-netes/
+   helm repo update  && \
+   helm upgrade openfaas --install openfaas/openfaas \
+      --namespace openfaas \
+      --set functionNamespace=openfaas-fn \
+      --set generateBasicAuth=true \
+      --set openfaasPRO=false \
+      --set faasnetes.image=szefoka/faas-netes:latest \
+      --set openfaasImagePullPolicy=Always
+   
+   PASSWORD=$(kubectl -n openfaas get secret basic-auth -o jsonpath="{.data.basic-auth-password}" | base64 --decode) && \
+   echo "OpenFaaS admin password: $PASSWORD"
+   ```
+2. Build the patched FaaS CLI tool
+   ```
+   git clone https://github.com/szefoka/faas-cli.git
+   cd faas-netes
+   git checkout edf
+   go build
+   cp faas-cli /usr/bin/
+   faas-cli login -u admin -p $PASSWORD -g localhost:31112
+   ```
+3. Deploy the PID server function
+   ```
+   cd functions
+   faas deploy -f pidserver.yaml -g localhost:31112
+   ```
+   If you want to made modifications on the server, you can do it in the pidserver/handler.py
+   In the template folder you can find the Flask server that runs the PID calculator and the Dockerfile, if you want to make modifications in the installed packages
+4. To run the PID server with EDF you should define the EDF tag and the runtime, deadline and period values. These values are in milliseconds and they are going to be passed to the function as Env vars.
+   ```yaml
+   version: 1.0
+   provider:
+     name: openfaas
+     gateway: http://127.0.0.1:8080
+   functions:
+     pidserver:
+       lang: python3-edf
+       handler: ./pidserver
+       image: szefoka/pidserver:latest
+       EDF:
+         runtime: "50"
+         deadline: "1000"
+         period: "1000"
+   ```
+   If you want to run the PID server without EDF, simply delete the EDF section.
+   When using EDF the underlying OpenFaaS will calculate and translate the CPU resources used by the function throug EDF.
+   When not using EDF you can define the amount of CPU resources you want to assign for the function instance.
+   In this case change the pidserver.yaml as shown below:
+   ```yaml
+   version: 1.0
+   provider:
+     name: openfaas
+     gateway: http://127.0.0.1:8080
+   functions:
+     pidserver:
+       lang: python3-edf
+       handler: ./pidserver
+       image: szefoka/pidserver:latest
+       limits:
+         cpu: 100m
+       requests:
+         cpu: 100m
+   ```
 
 ## Adjusting the robot's response timeout
 The completion time of PID calculation does not depend on the input parameters, therefore it uses almost the same amount of CPU ticks in  each invocation.
