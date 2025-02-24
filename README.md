@@ -65,8 +65,9 @@
    faas deploy -f pidserver.yaml -g localhost:31112
    ```
    If you want to made modifications on the server, you can do it in the pidserver/handler.py
+   
    In the template folder you can find the Flask server that runs the PID calculator and the Dockerfile, if you want to make modifications in the installed packages
-4. To run the PID server with EDF you should define the EDF tag and the runtime, deadline and period values. These values are in milliseconds and they are going to be passed to the function as Env vars.
+5. To run the PID server with EDF you should define the EDF tag and the runtime, deadline and period values. These values are in milliseconds and they are going to be passed to the function as Env vars.
    ```yaml
    version: 1.0
    provider:
@@ -83,9 +84,12 @@
          period: "1000"
    ```
    If you want to run the PID server without EDF, simply delete the EDF section.
+   
    When using EDF the underlying OpenFaaS will calculate and translate the CPU resources used by the function throug EDF.
+
    When not using EDF you can define the amount of CPU resources you want to assign for the function instance.
-   In this case change the pidserver.yaml as shown below:
+
+   In this case change the pidserver.yaml as shown below, and change the values according to your needs:
    ```yaml
    version: 1.0
    provider:
@@ -101,6 +105,7 @@
        requests:
          cpu: 100m
    ```
+   In this work we use guaranteed QoS classes, therefore make sure that the values defined under limits and requests are always the same. Another option to do this, define only the limits. 
 
 ## Adjusting the robot's response timeout
 The completion time of PID calculation does not depend on the input parameters, therefore it uses almost the same amount of CPU ticks in  each invocation.
