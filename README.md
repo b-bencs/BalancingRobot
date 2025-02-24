@@ -62,9 +62,14 @@
 3. Deploy the PID server function
    ```
    cd functions
-   faas deploy -f pidserver.yaml -g localhost:31112
+   faas-cli deploy -f pidserver.yaml -g localhost:31112
    ```
-   If you want to made modifications on the server, you can do it in the pidserver/handler.py
+   If you want to made modifications on the server, you can do it in the pidserver/handler.py. In this case you have to build and push the function befor deploying the changes. To be able to push make sure that you are logged in with your docker account. (docker loging -u <username>), and change the image tag of the pidserver.yaml accordingly.
+   ```
+   faas-cli build -f pidserver.yaml
+   faas-cli push -f pidserver.yaml   
+   faas-cli deploy -f pidserver.yaml -g localhost:31112
+   ```
    
    In the template folder you can find the Flask server that runs the PID calculator and the Dockerfile, if you want to make modifications in the installed packages
 5. To run the PID server with EDF you should define the EDF tag and the runtime, deadline and period values. These values are in milliseconds and they are going to be passed to the function as Env vars.
