@@ -72,7 +72,8 @@
    ```
    
    In the template folder you can find the Flask server that runs the PID calculator and the Dockerfile, if you want to make modifications in the installed packages
-5. To run the PID server with EDF you should define the EDF tag and the runtime, deadline and period values. These values are in milliseconds and they are going to be passed to the function as Env vars.
+   
+4. To run the PID server with EDF you should define the EDF tag and the runtime, deadline and period values. These values are in milliseconds and they are going to be passed to the function as Env vars.
    ```yaml
    version: 1.0
    provider:
