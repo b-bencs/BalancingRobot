@@ -84,6 +84,8 @@
        lang: python3-edf
        handler: ./pidserver
        image: szefoka/pidserver:latest
+       constraints:
+       - "job=pid"
        EDF:
          runtime: "50"
          deadline: "1000"
