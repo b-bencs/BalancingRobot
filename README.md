@@ -108,6 +108,8 @@
        lang: python3-edf
        handler: ./pidserver
        image: szefoka/pidserver:latest
+       constraints:
+       - "job=pid"   
        limits:
          cpu: 100m
        requests:
