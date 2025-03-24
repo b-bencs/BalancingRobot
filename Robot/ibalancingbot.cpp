@@ -2,45 +2,45 @@
 #define M_PI           3.14159265358979323846  /* pi */
 
 struct IBalancingBot {
-        float Mb = 0;  // kg      mass of main body (pendulum)
-        float Mw = 0;  // kg      mass of wheels
-        float d = 0;  // m       center of mass from base
-        float R = 0;   // m       Radius of wheel
-        float L = 0;   // m       Distance between the wheels
-        float Ix = 0;  // kg.m^2  Moment of inertia of body x-axis
-	float Iy = 0;  // kg.m^2  Moment of inertia of body y-axis
-        float Iz = 0;  // kg.m^2  Moment of inertia of body z-axis
-        float Ia = 0;  // kg.m^2  Moment of inertia of wheel according to center
-        float g = 0;   // m/s^2   Acceleration due to gravity
+        long double Mb = 0;  // kg      mass of main body (pendulum)
+        long double Mw = 0;  // kg      mass of wheels
+        long double d = 0;  // m       center of mass from base
+        long double R = 0;   // m       Radius of wheel
+        long double L = 0;   // m       Distance between the wheels
+        long double Ix = 0;  // kg.m^2  Moment of inertia of body x-axis
+	long double Iy = 0;  // kg.m^2  Moment of inertia of body y-axis
+        long double Iz = 0;  // kg.m^2  Moment of inertia of body z-axis
+        long double Ia = 0;  // kg.m^2  Moment of inertia of wheel according to center
+        long double g = 0;   // m/s^2   Acceleration due to gravity
 
         // variables for dynamic evaluation
-        float phi = 0;    // angle of the pendulum
-        float phip = 0;   // angular speed of the pendulum
-        float phipp = 0;  // angular acceleration of the pendulum
-        float x = 0;      // x position of the robot
-        float xp = 0;     // linear x speed of the robot
-        float xpp = 0;    // linear x acceleration of the robot
-        float psi = 0;    // rotation of the robot
-        float psip = 0;   // rotation angular speed of the robot
-        float psipp = 0;  // rotation angular acceleration of the robot
+        long double phi = 0;    // angle of the pendulum
+        long double phip = 0;   // angular speed of the pendulum
+        long double phipp = 0;  // angular acceleration of the pendulum
+        long double x = 0;      // x position of the robot
+        long double xp = 0;     // linear x speed of the robot
+        long double xpp = 0;    // linear x acceleration of the robot
+        long double psi = 0;    // rotation of the robot
+        long double psip = 0;   // rotation angular speed of the robot
+        long double psipp = 0;  // rotation angular acceleration of the robot
 
         // variables for the drawing
-        float d_rw = 0;       // wheel radius
-        float d_dstw = 0;     // distance between the wheels
-        float d_widthw = 0;   // width of a wheel
-        float d_heightp = 0;  // height of the pendulum
-        float d_centerp = 0;  // distance between the wheel and the pendulum center
-        float d_widthp = 0;   // width of the robot pipes
-	float phimin = 0;
-	float phimax = 0;
+        long double d_rw = 0;       // wheel radius
+        long double d_dstw = 0;     // distance between the wheels
+        long double d_widthw = 0;   // width of a wheel
+        long double d_heightp = 0;  // height of the pendulum
+        long double d_centerp = 0;  // distance between the wheel and the pendulum center
+        long double d_widthp = 0;   // width of the robot pipes
+	long double phimin = 0;
+	long double phimax = 0;
 
     struct f_return {
-	float phip;
-	float phipp;
-	float xp;
-	float xpp;
-	float psip;
-	float psipp;
+	long double phip;
+	long double phipp;
+	long double xp;
+	long double xpp;
+	long double psip;
+	long double psipp;
     };
 
     IBalancingBot () {
@@ -81,7 +81,7 @@ struct IBalancingBot {
         this->phimax = M_PI/2 + atan(this->R/(2*this->d));
         this->phimin = -M_PI/2 - atan(this->R/(2*this->d));
     }
-    struct f_return f(float phi, float phip, float x, float xp, float psi, float psip, float deltat, float* F) {
+    struct f_return f(long double phi, long double phip, long double x, long double xp, long double psi, long double psip, long double deltat, long double* F) {
         /*  Function to evaluate the new state of the system according to:
             - the mathematical model (phipp=, xpp=, psipp=)
             - the current state (phi, phip, x, xp, psi, psip)
@@ -90,49 +90,49 @@ struct IBalancingBot {
             It returns phip, phipp, xp, xpp, psip, psipp
         */
 
-        float tau1 = F[0];
-        float tau2 = F[1];
+        long double tau1 = F[0];
+        long double tau2 = F[1];
         
         //to ease the reading
-        float Mb = this->Mb;
-        float Mw = this->Mw;
-        float d  = this->d;
-        float R  = this->R;
-        float L  = this->L;
-        float Ix = this->Ix;
-        float Iz = this->Iz;
-        float Iy = this->Iy;
-        float Ia = this->Ia;
-        float g  = this->g;
+        long double Mb = this->Mb;
+        long double Mw = this->Mw;
+        long double d  = this->d;
+        long double R  = this->R;
+        long double L  = this->L;
+        long double Ix = this->Ix;
+        long double Iz = this->Iz;
+        long double Iy = this->Iy;
+        long double Ia = this->Ia;
+        long double g  = this->g;
 
-        float R2 = pow(R, 2);
-        float d2 = pow(d, 2);
+        long double R2 = pow(R, 2);
+        long double d2 = pow(d, 2);
 
         //computation of phipp
-        float den_phipp = (pow(R*Mb*d*sin(phi),2))+((Mb+2*Mw)*(R2)+2*Ia)*Ix+2*Mb*d2*(Mw*R2+Ia);
+        long double den_phipp = (pow(R*Mb*d*sin(phi),2))+((Mb+2*Mw)*(R2)+2*Ia)*Ix+2*Mb*d2*(Mw*R2+Ia);
 
-        float phipp = ((Mb*d2+Iy-Iz)*(Mb*R2+2*Mw*R2+2*Ia)*sin(phi)*cos(phi))*(pow(psip,2))/den_phipp \
+        long double phipp = ((Mb*d2+Iy-Iz)*(Mb*R2+2*Mw*R2+2*Ia)*sin(phi)*cos(phi))*(pow(psip,2))/den_phipp \
                 - (pow(Mb,2))*d2*R2*sin(phi)*cos(phi)*(pow(phip,2))/den_phipp \
                 + (Mb*R2+2*Mw*R2+2*Ia)*Mb*g*d*sin(phi)/den_phipp \
                 - ((Mb*R2+2*Mw*R2+2*Ia)+Mb*d*R*cos(phi))*(tau1+tau2)/den_phipp;
                 
         //computation of xpp
-        float den_xpp = (Mb*d2+Ix)*(Mb*R2+2*Mw*R2+2*Ia)-(pow((Mb*d*R*cos(phi)),2));
+        long double den_xpp = (Mb*d2+Ix)*(Mb*R2+2*Mw*R2+2*Ia)-(pow((Mb*d*R*cos(phi)),2));
 
-        float xpp = (Mb*d*R*cos(phi)*(Mb*d2+Iy-Iz)*sin(phi)*cos(phi)*(pow(psip,2)))/den_xpp \
+        long double xpp = (Mb*d*R*cos(phi)*(Mb*d2+Iy-Iz)*sin(phi)*cos(phi)*(pow(psip,2)))/den_xpp \
               - ((pow(Mb,2))*d2*g*R2*sin(phi)*cos(phi))/den_xpp \
               + (R2*(Mb*d2+Ix)*Mb*d*sin(phi)*(pow(phip,2)))/den_xpp \
               + (R*(Mb*d2+Ix+Mb*d*R*cos(phi))*(tau1+tau2))/den_xpp;
         //computation of psipp
-        float den_psipp = 2*(Mw+Ia/R2)*(pow(L,2))+Iy*(pow(sin(phi),2))+Iz*(pow(cos(phi),2))+Mb*d2*sin(phi);
+        long double den_psipp = 2*(Mw+Ia/R2)*(pow(L,2))+Iy*(pow(sin(phi),2))+Iz*(pow(cos(phi),2))+Mb*d2*sin(phi);
 
-        float psipp = (L*(tau1-tau2))/(R*den_psipp) \
+        long double psipp = (L*(tau1-tau2))/(R*den_psipp) \
                 - (2*(Mb*d2+Iy-Iz)*sin(phi)*cos(phi)*psip*phip)/den_psipp;
 
         return f_return { phip*deltat, phipp*deltat, xp*deltat, xpp*deltat, psip*deltat, psipp*deltat };
     }
 
-    void runge_kutta(float deltat, float* F) {
+    void runge_kutta(long double deltat, long double* F) {
 	    /* Function that call the f() function defined above, and uses a 
             runge-kutta approach to deal with the differential equations */
         //k1phip, k1phipp, k1xp, k1xpp, k1psip, k1psipp =
@@ -168,7 +168,7 @@ struct IBalancingBot {
 	}
     }
     
-    void dynamics(float deltat, float* F) {
+    void dynamics(long double deltat, long double* F) {
         this->runge_kutta(deltat, F);
     }
 };

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: robot
-        image: szefoka/edfrobotcontainer
-        command: ["./myapp", "600"]
+        image: mmarci98/edfrobotcontainer_ld2
+        command: ["./myapp","10","100"]  # Substitute timeout and fps here
       nodeSelector:
         job: "robot"

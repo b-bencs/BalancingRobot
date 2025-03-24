@@ -19,41 +19,41 @@ long long ref_time = 0;
 long long response_timeout = 1;
 int FPS = 10;
 
-float CameraPosX = 0.0;
-float CameraPosY = 3;
-float CameraPosZ = 10.0;
-float ViewUpX = 0.0;
-float ViewUpY = 1.0;
-float ViewUpZ = 0.0;
-float CenterX = 0.0;
-float CenterY = 0.0;
-float CenterZ = 0.0;
+long double CameraPosX = 0.0;
+long double CameraPosY = 3;
+long double CameraPosZ = 10.0;
+long double ViewUpX = 0.0;
+long double ViewUpY = 1.0;
+long double ViewUpZ = 0.0;
+long double CenterX = 0.0;
+long double CenterY = 0.0;
+long double CenterZ = 0.0;
 bool follow_robot = false; //so that the camera will follow the robot or not
 
-float posx = 0;
-float posz = 0;
+long double posx = 0;
+long double posz = 0;
 
-float Theta = 0.0;
-float dtheta=2*M_PI/100.0;
-float Radius = sqrt( pow(CameraPosX,2)+pow(CameraPosZ,2));
+long double Theta = 0.0;
+long double dtheta=2*M_PI/100.0;
+long double Radius = sqrt( pow(CameraPosX,2)+pow(CameraPosZ,2));
 
 //GLUquadricObj* quadric = gluNewQuadric();
 //gluQuadricNormals(quadric, GLU_SMOOTH);
 
-float rotation = 90.0;
-float posX = 0, posY = 0, posZ = 0;
-float move_unit = 3;
-float rate = 1.0f;
-float angle = -0.0f;
-float RotateX = 0.f, RotateY = 45.f;
+long double rotation = 90.0;
+long double posX = 0, posY = 0, posZ = 0;
+long double move_unit = 3;
+long double rate = 1.0f;
+long double angle = -0.0f;
+long double RotateX = 0.f, RotateY = 45.f;
 IBalancingBot myBot;
 
-float speed = 0.0;
-float current_speed = 0.0;
-float turn = 0.0;
-float current_turn = 0.0;
+long double speed = 0.0;
+long double current_speed = 0.0;
+long double turn = 0.0;
+long double current_turn = 0.0;
 bool use_pid = true;
-float F[] = {0.0,0.0};
+long double F[] = {0.0,0.0};
 
 auto start_t = std::chrono::steady_clock::now();
 
@@ -106,13 +106,13 @@ void _correction() {
             myPIDpsi.setPoint(turn);  // we only want to reset the PID when the rotation changes
 	}
 
-        float pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
-        float pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
+        long double pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
+        long double pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
 
-        float tilt = - pidx_value + myBot.phi;
+        long double tilt = - pidx_value + myBot.phi;
         rotation = pidpsi_value;
 
-        float pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
+        long double pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
 
         F[0] = -pidphi_value-rotation;
 	F[1] = -pidphi_value+rotation;
@@ -128,8 +128,8 @@ void _correction() {
     HTTP_PID copyMyPIDpsi;
     HTTP_PID copyMyPIDphi;
 
-    float copyRotation;
-    float copyF[2];
+    long double copyRotation;
+    long double copyF[2];
 };*/
 
 void correction() {
@@ -140,25 +140,25 @@ void correction() {
     HTTP_PID copyMyPIDx(myPIDx);
     HTTP_PID copyMyPIDpsi(myPIDpsi);
     HTTP_PID copyMyPIDphi(myPIDphi);
-    float copyRotation = rotation;
-    float copyF[2];
+    long double copyRotation = rotation;
+    long double copyF[2];
     copyF[0] = F[0];
     copyF[1] = F[1];
 
     //std::thread t([&cv, &copyMyPIDx, &copyMyPIDpsi, &copyMyPIDphi, &copyRotation, &copyF]() {
     std::thread t([&cv]() {
     	try {
-    	    float pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
-    	    float pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
-    	    //float pidx_value = copyMyPIDx.update(myBot.xp);  // Pid over linear a speed
-    	    //float pidpsi_value = copyMyPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
+    	    long double pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
+    	    long double pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
+    	    //long double pidx_value = copyMyPIDx.update(myBot.xp);  // Pid over linear a speed
+    	    //long double pidpsi_value = copyMyPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
 
-    	    float tilt = - pidx_value + myBot.phi;
+    	    long double tilt = - pidx_value + myBot.phi;
     	    rotation = pidpsi_value;
     	    //copyRotation = pidpsi_value;
 
-    	    float pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
-    	    //float pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
+    	    long double pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
+    	    //long double pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
 
     	    F[0] = -pidphi_value-rotation;
     	    F[1] = -pidphi_value+rotation;
@@ -212,8 +212,8 @@ void timeoutCorrection() {
     HTTP_PID copyMyPIDx(myPIDx);
     HTTP_PID copyMyPIDpsi(myPIDpsi);
     HTTP_PID copyMyPIDphi(myPIDphi);
-    float copyRotation = rotation;
-    float copyF[2];
+    long double copyRotation = rotation;
+    long double copyF[2];
     copyF[0] = F[0];
     copyF[1] = F[1];
     try {
@@ -246,11 +246,16 @@ void animation() {
     // Function to compute the robot state at each time step and to draw it in the world
 
     // FPS expressed in ms between 2 consecutive frame
-    float delta_t = 0.001; // the time step for the computation of the robot state
+    long double delta_t = 0.001; // the time step for the computation of the robot state
     //if (glutGet(GLUT_ELAPSED_TIME)-ref_time > (1.0/FPS)*1000) {
     if (getElapsedTime()-ref_time > (1.0/FPS)*1000) {
         // at each redisplay (new display frame)
-        float dst = 0;
+	//std::cout<<myBot.phi<<" "<<myBot.phip<<std::endl;
+	if (myBot.phi < 0.00001 && myBot.phi > -0.00001 && myBot.phip < 0.00001 && myBot.phip > -0.00001){
+	std::cout<<"Evertyhing is zero."<<std::endl;
+	myBot.initRobot();
+}
+        long double dst = 0;
         for (int i = 0; i < 100; i++) {
             // we want the computation of the robot state to be faster than the 
             // display to limit the compution errors
@@ -263,10 +268,20 @@ void animation() {
             posz += (-dst*sin(myBot.psi));
 	}
     //correction();  // calls the PIDs if enable
-	timeoutCorrection();
+	//timeoutCorrection();
     //glutPostRedisplay();  // refresh the display
-    ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
+    //ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
 	//std::this_thread::sleep_for(10ms);
+        if (myBot.phi > 0.785){
+	myBot.phi = 2.03;
+	}
+	else if (myBot.phi < -0.785){
+	myBot.phi = -2.03;
+	}
+	else{
+	timeoutCorrection();
+	ref_time = getElapsedTime();
+	}
 	influxdbwriter.Write(myBot.phi, timeout_happened);
 	timeout_happened = false;
 	//std::cout<<myBot.phi<<std::endl;
@@ -355,6 +370,7 @@ int main(int argc, char** argv) {
     //influxdbwriter = InfluxDBWriter("http://influxdb.default.svc.cluster.local:8086", "robot", hostname);
     if(argc > 1) {
         response_timeout = std::atoll(argv[1]);
+	FPS = std::atoll(argv[2]);
     }
     //std::thread correctionThread(threadCorrection);
     srand((unsigned)time(0));

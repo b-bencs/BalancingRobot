@@ -1,0 +1,12 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  pidserver:
+    lang: python3-edf
+    handler: ./pidserver
+    image: szefoka/pidserver:latest
+    annotations:
+      com.openfaas.k8s.node-selector: "kubernetes.io/hostname=node3.robokube.cloudnet-pg0.utah.cloudlab.us"
+
