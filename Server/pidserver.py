@@ -27,36 +27,35 @@ def pid():
     """
     if request.method == 'POST':
         d = request.get_data()
-        #print(d.decode())
+        
         d = json.loads(d.decode())
-        #print(type(d))
-        #t = time.clock_gettime(time.CLOCK_TAI)*10**9
-        #diff = int(t - d["time"])
-        #app.logger.info("diff %d", diff)
-        #dl_args = (
-        #    7 * 1000 * 1000, # runtime in nanoseconds
-        #    10 * 1000 * 1000, # deadline in nanoseconds
-        #    10 * 1000 * 1000  # time period in nanoseconds
-        #)
-
-        #scheddl.set_deadline(*dl_args)
+        
         try:
             error = d["set_point"] - d["current_value"]
 
+            #Proportional term
             P_value = d["Kp"] * error
-            D_value = d["Kd"] * ( error - d["Derivator"])
-            Derivator = error
+            
+            #Filtered Derivative term
+            tau = 3 * d["expected_dt"]
+            alpha = d["dt"]/(d["dt"] + tau)
 
-            Integrator = d["Integrator"] + error
+            #Calculate raw derivative and apply low-pass filter
+            raw_derivative = (error - d["Derivator"]) / d["dt"]
+            D_value = (1.0 - alpha) * d["D_value"] + alpha * raw_derivative
 
+            Derivator = error #Save error for next loop
+            D_term = d["Kd"] * D_value
+
+            Integrator = d["Integrator"] + 0.5 * (error + Derivator) * d["dt"]
             if Integrator > d["Integrator_max"]:
                 Integrator = d["Integrator_max"]
             elif Integrator < d["Integrator_min"]:
                 Integrator = d["Integrator_min"]
 
-            I_value = d["Integrator"] * d["Ki"]
+            I_value = Integrator * d["Ki"]
 
-            PID = P_value + I_value + D_value
+            PID = P_value + I_value + D_term
 
             ret_dict = {
                 "error": error,
@@ -70,7 +69,7 @@ def pid():
 
             return json.dumps(ret_dict)
         finally:
-            #scheddl.sched_yield()
+            
             pass
 
 if __name__ == '__main__':  

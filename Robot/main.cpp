@@ -13,11 +13,15 @@
 #include "pid.cpp"
 #include "http_pid.cpp"
 #include "influxdbwriter.cpp"
-#define M_PI           3.14159265358979323846  /* pi */
+#define M_PI 3.14159265358979323846 /* pi */
 
-long long ref_time = 0;
+long double ref_time = 0.0;
+long double update_ref_time = 0.0;
 long long response_timeout = 1;
 int FPS = 10;
+long double dt = 1.0f / FPS;
+long double delta_time;
+long double update_delta_time;
 
 long double CameraPosX = 0.0;
 long double CameraPosY = 3;
@@ -28,17 +32,17 @@ long double ViewUpZ = 0.0;
 long double CenterX = 0.0;
 long double CenterY = 0.0;
 long double CenterZ = 0.0;
-bool follow_robot = false; //so that the camera will follow the robot or not
+bool follow_robot = false; // so that the camera will follow the robot or not
 
 long double posx = 0;
 long double posz = 0;
 
 long double Theta = 0.0;
-long double dtheta=2*M_PI/100.0;
-long double Radius = sqrt( pow(CameraPosX,2)+pow(CameraPosZ,2));
+long double dtheta = 2 * M_PI / 100.0;
+long double Radius = sqrt(pow(CameraPosX, 2) + pow(CameraPosZ, 2));
 
-//GLUquadricObj* quadric = gluNewQuadric();
-//gluQuadricNormals(quadric, GLU_SMOOTH);
+// GLUquadricObj* quadric = gluNewQuadric();
+// gluQuadricNormals(quadric, GLU_SMOOTH);
 
 long double rotation = 90.0;
 long double posX = 0, posY = 0, posZ = 0;
@@ -53,9 +57,9 @@ long double current_speed = 0.0;
 long double turn = 0.0;
 long double current_turn = 0.0;
 bool use_pid = true;
-long double F[] = {0.0,0.0};
+long double F[] = {0.0, 0.0};
 
-auto start_t = std::chrono::steady_clock::now();
+auto start_t = std::chrono::high_resolution_clock::now();
 
 HTTP_PID myPIDphi = HTTP_PID("http://10.44.0.7:5000/pid");
 HTTP_PID myPIDx = HTTP_PID("http://10.44.0.7:5000/pid");
@@ -65,13 +69,14 @@ bool timeout_happened = false;
 
 using namespace std::literals::chrono_literals;
 
-//std::chrono::milliseconds getElapsedTime() {
-long long getElapsedTime() {
-    auto end = std::chrono::steady_clock::now();
-    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start_t).count();
+long double getElapsedTime() {
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<long double, std::ratio<1>> duration = end - start_t;
+    return duration.count();
 }
 
-void initPIDs() {
+void initPIDs()
+{
     // Function that initializes the PIDs parameters (Kp, Ki, Kd)
 
     myPIDphi.setKp(7.0);
@@ -80,8 +85,8 @@ void initPIDs() {
     myPIDphi.setPoint(0);
 
     myPIDx.setKp(0.01);
-    myPIDx.setKi(0.005);
-    myPIDx.setKd(0.01);
+    myPIDx.setKi(0.05 * dt);
+    myPIDx.setKd(0.1 * dt);
     myPIDx.setPoint(0);
 
     myPIDpsi.setKp(1);
@@ -90,53 +95,12 @@ void initPIDs() {
     myPIDpsi.setPoint(0);
 }
 
-void _correction() {
-    /* Function that uses the PID and the robot state to generate a new 
-        command according to the speed and turn objectives
-    */
-
-    if(use_pid) {
-        if(current_speed != speed) {
-            current_speed = speed;
-            myPIDx.setPoint(speed);  // we only want to reset the PID when the speed changes
-	}
-
-        if(current_turn != turn) {
-            current_turn = turn;
-            myPIDpsi.setPoint(turn);  // we only want to reset the PID when the rotation changes
-	}
-
-        long double pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
-        long double pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
-
-        long double tilt = - pidx_value + myBot.phi;
-        rotation = pidpsi_value;
-
-        long double pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
-
-        F[0] = -pidphi_value-rotation;
-	F[1] = -pidphi_value+rotation;
-    }
-    else {
-        F[0] = 0.0;
-	F[1] = 0.0;
-    }
-}
-
-/*struct correctionReturnStruct {
-    HTTP_PID copyMyPIDx;
-    HTTP_PID copyMyPIDpsi;
-    HTTP_PID copyMyPIDphi;
-
-    long double copyRotation;
-    long double copyF[2];
-};*/
-
-void correction() {
+void correction()
+{
     std::mutex m;
     std::condition_variable cv;
 
-    //correctionReturnStruct ret;
+    // correctionReturnStruct ret;
     HTTP_PID copyMyPIDx(myPIDx);
     HTTP_PID copyMyPIDpsi(myPIDpsi);
     HTTP_PID copyMyPIDphi(myPIDphi);
@@ -145,19 +109,19 @@ void correction() {
     copyF[0] = F[0];
     copyF[1] = F[1];
 
-    //std::thread t([&cv, &copyMyPIDx, &copyMyPIDpsi, &copyMyPIDphi, &copyRotation, &copyF]() {
-    std::thread t([&cv]() {
+    // std::thread t([&cv, &copyMyPIDx, &copyMyPIDpsi, &copyMyPIDphi, &copyRotation, &copyF]() {
+    std::thread t([&cv]()
+                  {
     	try {
-    	    long double pidx_value = myPIDx.update(myBot.xp);  // Pid over linear a speed
-    	    long double pidpsi_value = myPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
-    	    //long double pidx_value = copyMyPIDx.update(myBot.xp);  // Pid over linear a speed
-    	    //long double pidpsi_value = copyMyPIDpsi.update(-myBot.psip);  // Pid over psi angular speed rotation
+    	    long double pidx_value = myPIDx.update(myBot.xp, update_delta_time, dt);  // Pid over linear a speed
+    	    long double pidpsi_value = myPIDpsi.update(-myBot.psip, update_delta_time, dt);  // Pid over psi angular speed rotation
+
 
     	    long double tilt = - pidx_value + myBot.phi;
     	    rotation = pidpsi_value;
     	    //copyRotation = pidpsi_value;
 
-    	    long double pidphi_value = myPIDphi.update(tilt);  // pid over the pendulum angle phi
+    	    long double pidphi_value = myPIDphi.update(tilt, update_delta_time, dt);  // pid over the pendulum angle phi
     	    //long double pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
 
     	    F[0] = -pidphi_value-rotation;
@@ -174,21 +138,21 @@ void correction() {
     	catch (...) {
     	    std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
     	    //std::this_thread::sleep_for(5ms);
-    	}
-    });
-    
+    	} });
+
     t.detach();
 
     std::unique_lock<std::mutex> l(m);
-    //if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
-    if(cv.wait_for(l, std::chrono::milliseconds(response_timeout)) == std::cv_status::timeout) {
-    	//t.join();
-    	//printf("runtime_error timeout\n");
-    	//throw std::runtime_error("Timeout");
-        //t.join();
-    	std::cout<<response_timeout<<std::endl;
-    	throw std::exception();
-    	//throw std::runtime_error("Timeout");
+    // if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
+    if (cv.wait_for(l, std::chrono::milliseconds(response_timeout)) == std::cv_status::timeout)
+    {
+        // t.join();
+        // printf("runtime_error timeout\n");
+        // throw std::runtime_error("Timeout");
+        // t.join();
+        std::cout << response_timeout << std::endl;
+        throw std::exception();
+        // throw std::runtime_error("Timeout");
     }
     /*myPIDx = copyMyPIDx;
     myPIDpsi = copyMyPIDpsi;
@@ -198,15 +162,18 @@ void correction() {
     F[1] = copyF[1];*/
 }
 
-void timeoutCorrection() {
-    if(current_speed != speed) {
-	current_speed = speed;
-	myPIDx.setPoint(speed);  // we only want to reset the PID when the speed changes
+void timeoutCorrection()
+{
+    if (current_speed != speed)
+    {
+        current_speed = speed;
+        myPIDx.setPoint(speed); // we only want to reset the PID when the speed changes
     }
 
-    if(current_turn != turn) {
-	current_turn = turn;
-	myPIDpsi.setPoint(turn);  // we only want to reset the PID when the rotation changes
+    if (current_turn != turn)
+    {
+        current_turn = turn;
+        myPIDpsi.setPoint(turn); // we only want to reset the PID when the rotation changes
     }
 
     HTTP_PID copyMyPIDx(myPIDx);
@@ -216,14 +183,16 @@ void timeoutCorrection() {
     long double copyF[2];
     copyF[0] = F[0];
     copyF[1] = F[1];
-    try {
-	    correction();
+    try
+    {
+        correction();
     }
-    //catch(std::runtime_error& e) {
-    catch(...) {
-	//printf("runtime_error timeout\n");
-    	std::this_thread::sleep_for(10ms);
-    	timeout_happened = true;
+    // catch(std::runtime_error& e) {
+    catch (...)
+    {
+        // printf("runtime_error timeout\n");
+        std::this_thread::sleep_for(10ms);
+        timeout_happened = true;
         myPIDx = copyMyPIDx;
         myPIDpsi = copyMyPIDpsi;
         myPIDphi = copyMyPIDphi;
@@ -233,149 +202,63 @@ void timeoutCorrection() {
     }
 }
 
-void threadCorrection() {
-    while(true) {
-    	//if (glutGet(GLUT_ELAPSED_TIME)-ref_time > (1.0/FPS)*1000) {
-    	if (getElapsedTime()-ref_time > (1.0/FPS)*1000) {
-    	    correction();
-    	}
+void threadCorrection()
+{
+    while (true)
+    {
+        // if (glutGet(GLUT_ELAPSED_TIME)-ref_time > (1.0/FPS)*1000) {
+            if (getElapsedTime()-ref_time > 1.0/FPS) {
+                correction();
+            }
     }
 }
 
-void animation() {
-    // Function to compute the robot state at each time step and to draw it in the world
+void animation(){
+    double current_time = getElapsedTime();
+    delta_time = current_time-ref_time;
+    update_delta_time = current_time-update_ref_time;
+    if (delta_time > 1.0/FPS){
+        if (myBot.phi < 0.00001 && myBot.phi > -0.00001 && myBot.phip < 0.00001 && myBot.phip > -0.00001){
+            std::cout<<"Evertything is zero."<<std::endl;
+            myBot.initRobot();
+        }
 
-    // FPS expressed in ms between 2 consecutive frame
-    long double delta_t = 0.001; // the time step for the computation of the robot state
-    //if (glutGet(GLUT_ELAPSED_TIME)-ref_time > (1.0/FPS)*1000) {
-    if (getElapsedTime()-ref_time > (1.0/FPS)*1000) {
-        // at each redisplay (new display frame)
-	//std::cout<<myBot.phi<<" "<<myBot.phip<<std::endl;
-	if (myBot.phi < 0.00001 && myBot.phi > -0.00001 && myBot.phip < 0.00001 && myBot.phip > -0.00001){
-	std::cout<<"Evertyhing is zero."<<std::endl;
-	myBot.initRobot();
-}
-        long double dst = 0;
-        for (int i = 0; i < 100; i++) {
-            // we want the computation of the robot state to be faster than the 
-            // display to limit the compution errors
-            // display : new frame at each 100ms
-            // deltat : 1ms for the differential equation evaluation
-            myBot.dynamics(delta_t, F);
-            // we also compute the new x and z position of the robot in the world
-            dst = (myBot.xp * delta_t);
+        if (myBot.phi <= 0.785 && myBot.phi >= -0.785){
+            long double dst = 0;
+            myBot.dynamics(delta_time, F);
+            dst = (myBot.xp * delta_time);
             posx += dst*cos(myBot.psi);
             posz += (-dst*sin(myBot.psi));
-	}
-    //correction();  // calls the PIDs if enable
-	//timeoutCorrection();
-    //glutPostRedisplay();  // refresh the display
-    //ref_time=getElapsedTime(); //glutGet(GLUT_ELAPSED_TIME);
-	//std::this_thread::sleep_for(10ms);
-        if (myBot.phi > 0.785){
-	myBot.phi = 2.03;
-	}
-	else if (myBot.phi < -0.785){
-	myBot.phi = -2.03;
-	}
-	else{
-	timeoutCorrection();
-	ref_time = getElapsedTime();
-	}
-	influxdbwriter.Write(myBot.phi, timeout_happened);
-	timeout_happened = false;
-	//std::cout<<myBot.phi<<std::endl;
+            timeoutCorrection();
+        } else if (myBot.phi > 0.785){
+            myBot.phi = 2.03;
+        } else {
+            myBot.phi = -2.03;
+        }
+        ref_time = getElapsedTime();
+        if (timeout_happened == false) update_ref_time = getElapsedTime();
+        influxdbwriter.Write(myBot.phi, timeout_happened, update_delta_time);
+        timeout_happened = false;
     }
 }
 
-/*
-void SpecialFunc(int skey, int x, int y) {
-    //Function to handle the keybord keys
-
-    if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
-        // SHIFT pressed
-        if (skey == GLUT_KEY_UP) {
-            CameraPosY+=0.3;  // put the camera higher
-	}
-        if (skey == GLUT_KEY_DOWN) {
-            CameraPosY-=0.3;  // put the camera lower
-	}
-    }
-    else {
-        // standard
-        if (skey == GLUT_KEY_LEFT) {
-            rotate_camera(-dtheta);
-	}
-        else if (skey == GLUT_KEY_RIGHT) {
-            rotate_camera(dtheta);
-	}
-        else if (skey == GLUT_KEY_UP) {
-            zoom_camera(0.9);
-	}
-        else if (skey == GLUT_KEY_DOWN) {
-            zoom_camera(1.1);
-	}
-        else if (skey == GLUT_KEY_PAGE_DOWN) {
-            printf("\tSimulation ON\n");
-            glutIdleFunc(animation);
-	}
-        else if (skey == GLUT_KEY_PAGE_UP) {
-            //print("\tSimulation PAUSE");
-            glutIdleFunc(NULL);
-	}
-        else if (skey == GLUT_KEY_F1) {
-            speed = 0.15;
-	}
-        else if (skey == GLUT_KEY_F2) {
-            speed = -0.15;
-	}
-        else if (skey == GLUT_KEY_F3) {
-            turn = 0.3;
-	}
-        else if (skey == GLUT_KEY_F4) {
-            speed = 0;
-            turn = 0;
-	}
-        else if (skey == GLUT_KEY_F5) {
-            use_pid = !use_pid;
-            printf("\tUsing PID\n");
-            if(use_pid == true) {
-                initPIDs();
-	    }
-	}
-        else if (skey == GLUT_KEY_F6) {
-            posx = posz = 0;
-            myBot.initRobot();
-            initPIDs();
-	}
-        else if (skey == GLUT_KEY_F7) {
-            myBot.phi += (10*M_PI/180);
-	}
-        else if (skey == GLUT_KEY_F8) {
-            myBot.phi += (-20*M_PI/180);
-	}
-        else if (skey == GLUT_KEY_F9) {
-            follow_robot = not(follow_robot);
-            //print("\tFollowing robot : " + str(follow_robot));
-	}
-    }
-    glutPostRedisplay();
-}*/
-
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     char hostname[HOST_NAME_MAX];
     gethostname(hostname, HOST_NAME_MAX);
-    //influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"));
+    // influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"));
     influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"), std::string(hostname));
-    //influxdbwriter = InfluxDBWriter("http://influxdb.default.svc.cluster.local:8086", "robot", hostname);
-    if(argc > 1) {
+    // influxdbwriter = InfluxDBWriter("http://influxdb.default.svc.cluster.local:8086", "robot", hostname);
+    if (argc > 1)
+    {
         response_timeout = std::atoll(argv[1]);
-	FPS = std::atoll(argv[2]);
+        FPS = std::atoll(argv[2]);
     }
-    //std::thread correctionThread(threadCorrection);
+    dt = 1.0f / FPS;
+    // std::thread correctionThread(threadCorrection);
     srand((unsigned)time(0));
     initPIDs();
-    while(1) {
-	animation();
+    while (1){
+        animation();
     }
 }

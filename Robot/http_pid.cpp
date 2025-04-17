@@ -17,7 +17,7 @@ struct HTTP_PID : PID {
     std::string serveraddr;
     static WebClient wc;
     //HTTP_PID() {}
-    HTTP_PID(std::string pidserver, float P=7.0, float I=0.1, float D=6.0, float Derivator=0, float Integrator=0, float Integrator_max=3, float Integrator_min=-3) : \
+    HTTP_PID(std::string pidserver, long double P=7.0, long double I=0.1, long double D=6.0, long double Derivator=0, long double Integrator=0, long double Integrator_max=3, long double Integrator_min=-3) : \
     PID(P, I, D, Derivator, Integrator, Integrator_max, Integrator_min) {
 	serveraddr = pidserver;
 	//wc = WebClient("http://localhost:31500/pid");
@@ -36,12 +36,14 @@ struct HTTP_PID : PID {
 	return *this;
     }
     
-    float update(float current_value) {
+    long double update(long double current_value, long double dt, long double expected_dt) {
     struct timespec ts;
     timespec_get(&ts, CLOCK_TAI);
 	json data = json::object({
 	                {"time", 1000000000*ts.tv_sec+ts.tv_nsec},
 				    {"current_value", current_value},
+					{"expected_dt", expected_dt},
+					{"dt", dt},
 				    {"set_point", set_point},
 				    {"Kp", Kp},
 				    {"Ki", Ki},
@@ -49,7 +51,8 @@ struct HTTP_PID : PID {
 				    {"Integrator_min", Integrator_min},
 				    {"Integrator_max", Integrator_max},
 				    {"Integrator", Integrator},
-				    {"Derivator", Derivator}
+				    {"Derivator", Derivator},
+					{"D_value", D_value}
 				});
 	wc.post(to_string(data));
 
@@ -82,7 +85,7 @@ struct HTTP_PID : PID {
     }
 };
 
-//WebClient HTTP_PID::wc = WebClient("http://pidserver.default.svc.cluster.local:5000/pid");
-WebClient HTTP_PID::wc = WebClient("http://pidserver.openfaas-fn.svc.cluster.local:8080/pid");
+WebClient HTTP_PID::wc = WebClient("http://pidserver.default.svc.cluster.local:5000/pid");
+//WebClient HTTP_PID::wc = WebClient("http://pidserver.openfaas-fn.svc.cluster.local:8080/pid");
 
 #endif

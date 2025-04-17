@@ -2,22 +2,22 @@
 #define PID_CPP
 
 struct PID {
-    float Kp;
-    float Ki;
-    float Kd;
-    float Derivator;
-    float Integrator;
-    float Integrator_max;
-    float Integrator_min;
+    long double Kp;
+    long double Ki;
+    long double Kd;
+    long double Derivator;
+    long double Integrator;
+    long double Integrator_max;
+    long double Integrator_min;
 
-    float set_point=0.0;
-    float error=0.0;
+    long double set_point=0.0;
+    long double error=0.0;
     
-    float P_value = 0.0;
-    float D_value = 0.0;
-    float I_value = 0.0;
+    long double P_value = 0.0;
+    long double D_value = 0.0;
+    long double I_value = 0.0;
     
-    PID(float P=7.0, float I=0.1, float D=6.0, float Derivator=0, float Integrator=0, float Integrator_max=3, float Integrator_min=-3): \
+    PID(long double P=7.0, long double I=0.1, long double D=6.0, long double Derivator=0, long double Integrator=0, long double Integrator_max=3, long double Integrator_min=-3): \
 	Kp(P), Ki(I), Kd(D), Derivator(Derivator), Integrator(Integrator), Integrator_max(Integrator_max), Integrator_min(Integrator_min) {
         this->set_point=0.0;
         this->error=0.0;
@@ -60,70 +60,78 @@ struct PID {
 	return *this;
     }
 
-    virtual float update(float current_value) {
+    virtual long double update(long double current_value, long double dt, long double expected_dt) {
         // Calculate PID output value for given reference input and feedback
-
         this->error = this->set_point - current_value;
-
+    
+        // Proportional term
         this->P_value = this->Kp * this->error;
-        this->D_value = this->Kd * ( this->error - this->Derivator);
-        this->Derivator = this->error;
-
-        this->Integrator = this->Integrator + this->error;
-
+    
+        // Filtered Derivative term
+        long double tau = 3 * expected_dt;  // You can tune this constant
+        long double alpha = dt / (dt + tau);
+    
+        // Calculate raw derivative and apply low-pass filter
+        long double raw_derivative = (this->error - this->Derivator) / dt;
+        this->D_value = (1.0 - alpha) * this->D_value + alpha * raw_derivative;
+        long double filtered_derivative = this->D_value;  // for clarity
+    
+        this->Derivator = this->error;  // Save error for next loop
+        long double D_term = this->Kd * filtered_derivative;
+    
+        // Integral term with manual clamping
+        // this->Integrator += this->error * dt;
+        this->Integrator += 0.5 * (this->error + this->Derivator) * dt;
         if (this->Integrator > this->Integrator_max) {
             this->Integrator = this->Integrator_max;
-	}
-        else if (this->Integrator < this->Integrator_min) {
+        } else if (this->Integrator < this->Integrator_min) {
             this->Integrator = this->Integrator_min;
-	}
-
-        this->I_value = this->Integrator * this->Ki;
-
-        float pid = this->P_value + this->I_value + this->D_value;
-
-        return pid;
+        }
+        this->I_value = this->Ki * this->Integrator;
+    
+        return this->P_value + this->I_value + D_term;
+        
     }
 
-    void setPoint(float set_point) {
+    void setPoint(long double set_point) {
         // Initilize the setpoint of PID
         this->set_point = set_point;
         this->Integrator = 0;
         this->Derivator = 0;
     }
 
-    void setIntegrator(float Integrator) {
+    void setIntegrator(long double Integrator) {
         this->Integrator = Integrator;
     }
 
-    void setDerivator(float Derivator) {
+    void setDerivator(long double Derivator) {
         this->Derivator = Derivator;
     }
 
-    void setKp(float P) {
+    void setKp(long double P) {
         this->Kp = P;
     }
 
-    void setKi(float I) {
+    void setKi(long double I) {
         this->Ki = I;
     }
 
-    void setKd(float D) {
+    void setKd(long double D) {
         this->Kd = D;
     }
 
-    float getPoint() {
+    long double getPoint() {
         return this->set_point;
     }
     
-    float getError() {
+    long double getError() {
         return this->error;
     }
 
-    float getIntegrator() {
+    long double getIntegrator() {
         return this->Integrator;
     }
-    float getDerivator() {
+    long double getDerivator() {
         return this->Derivator;
     }
 };
