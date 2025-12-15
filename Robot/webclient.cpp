@@ -1,63 +1,66 @@
 #ifndef WEBCLIENT_CPP
 #define WEBCLIENT_CPP
 
-#include <curl/curl.h>
 #include <string>
-#include <iostream>
-#include <mutex>
+#include <stdexcept>
+#include <curl/curl.h>
 
-std::mutex mtx;
+class WebClient {
+    std::string url;
+    std::string response;
 
-struct WebClient {
-    std::string serveraddr;
-    CURL *curl;
-    CURLcode res;
-    std::string readBuffer;
-    WebClient() {}
-    
-    WebClient(std::string serveraddr) : serveraddr(serveraddr) {
-	curl = curl_easy_init();
-	if(curl) {
-	    curl_easy_setopt(curl, CURLOPT_URL, serveraddr.c_str());
-	    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-	}
+    static size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
+        size_t total = size * nmemb;
+        auto* self = static_cast<WebClient*>(userdata);
+        self->response.append(ptr, total);
+        return total;
     }
-    
-    //WebClient(const &WebClient) {}
-    
-    static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-	mtx.lock();
-	((std::string*)userp)->append((char*)contents, size * nmemb);
-	mtx.unlock();
-	return size * nmemb;
+
+public:
+    explicit WebClient(const std::string& url) : url(url), response() {}
+
+    void post(const std::string& body) {
+        CURL* curl = curl_easy_init();
+        if (!curl) {
+            throw std::runtime_error("curl_easy_init failed");
+        }
+
+        response.clear();
+
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.size());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WebClient::WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+
+        CURLcode res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            throw std::runtime_error(
+                std::string("curl_easy_perform failed: ") + curl_easy_strerror(res));
+        }
+
+        long http_code = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+
+        if (http_code / 100 != 2) {
+            throw std::runtime_error("HTTP status " + std::to_string(http_code) +
+                                     " body: " + response);
+        }
     }
-    
-    void post(std::string data) {
-	readBuffer.erase();
-	//readBuffer = std::string(1000, ' ');
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.length());
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-	res = curl_easy_perform(curl);
-	//std::cout<<"response code: "<<res<<std::endl;
-	//curl_easy_cleanup(curl);
-    }
-    
-    std::string getResponse() {
-	return readBuffer;
-    }
-    
-    ~WebClient() {
-	curl_easy_cleanup(curl);
+
+    const std::string& getResponse() const {
+        return response;
     }
 };
 
-
-/*int main() {
-    WebClient wc = WebClient("http://localhost:5000/pid");
-    wc.post("Hello");
-    std::cout<<wc.getResponse()<<std::endl;
-    return 0;
-}*/
 #endif

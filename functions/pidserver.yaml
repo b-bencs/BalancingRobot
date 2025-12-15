@@ -6,9 +6,12 @@ functions:
   pidserver:
     lang: python3-edf
     handler: ./pidserver
-    image: szefoka/pidserver:latest
+    image: botondbencs/pidserver:latest
     EDF:
-      runtime: "50"
-      deadline: "1000"
-      period: 1000
-
+      runtime: "5"
+      deadline: "20"
+      period: "20"
+    labels:
+      com.openfaas.scale.min: "1"
+      com.openfaas.scale.max: "5"
+      com.openfaas.scale.zero: "false"

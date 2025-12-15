@@ -1,2 +1,2 @@
-docker build . -t mmarci98/edfrobotcontainer_ld2
-docker push mmarci98/edfrobotcontainer_ld2
+docker build -t botondbencs/edfrobotcontainer_ld2:latest .
+docker push botondbencs/edfrobotcontainer_ld2:latest

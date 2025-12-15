@@ -61,9 +61,9 @@ long double F[] = {0.0, 0.0};
 
 auto start_t = std::chrono::high_resolution_clock::now();
 
-HTTP_PID myPIDphi = HTTP_PID("http://10.44.0.7:5000/pid");
-HTTP_PID myPIDx = HTTP_PID("http://10.44.0.7:5000/pid");
-HTTP_PID myPIDpsi = HTTP_PID("http://10.44.0.7:5000/pid");
+HTTP_PID myPIDphi;
+HTTP_PID myPIDx;
+HTTP_PID myPIDpsi;
 InfluxDBWriter influxdbwriter;
 bool timeout_happened = false;
 

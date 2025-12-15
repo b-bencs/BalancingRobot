@@ -1,0 +1,35 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: rt-critical
+value: 100000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Real-time critical workloads"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot
+  labels:
+    app: robot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot
+  template:
+    metadata:
+      labels:
+        app: robot
+        criticality: rt
+      annotations:
+        rt-q-ms: "1"
+        rt-p-ms: "10"
+    spec:
+      schedulerName: rtfaas-scheduler
+      priorityClassName: rt-critical
+      containers:
+      - name: robot
+        image: botondbencs/edfrobotcontainer_ld2
+        command: ["./myapp","1","10"]

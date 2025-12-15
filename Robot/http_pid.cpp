@@ -16,7 +16,7 @@ using std::to_string;
 struct HTTP_PID : PID {
     std::string serveraddr;
     static WebClient wc;
-    //HTTP_PID() {}
+    HTTP_PID() : HTTP_PID("") {}
     HTTP_PID(std::string pidserver, long double P=7.0, long double I=0.1, long double D=6.0, long double Derivator=0, long double Integrator=0, long double Integrator_max=3, long double Integrator_min=-3) : \
     PID(P, I, D, Derivator, Integrator, Integrator_max, Integrator_min) {
 	serveraddr = pidserver;
@@ -54,8 +54,8 @@ struct HTTP_PID : PID {
 				    {"Derivator", Derivator},
 					{"D_value", D_value}
 				});
-	wc.post(to_string(data));
-
+//	wc.post(to_string(data));
+	wc.post(data.dump());
 	//std::stringstream buffer;
 	/* buffer << "{" << "\"current_value\": " << current_value << ", \"set_point\": " \
 	       << this->set_point << ", \"error\": " << this->error \
@@ -85,7 +85,9 @@ struct HTTP_PID : PID {
     }
 };
 
-WebClient HTTP_PID::wc = WebClient("http://pidserver.default.svc.cluster.local:5000/pid");
-//WebClient HTTP_PID::wc = WebClient("http://pidserver.openfaas-fn.svc.cluster.local:8080/pid");
+//WebClient HTTP_PID::wc = WebClient("http://pidserver.default.svc.cluster.local:5000/pid");
+//WebClient HTTP_PID::wc = WebClient("http://pidserver.openfaas-fn.svc.cluster.local:8080/function/pidserver");
+WebClient HTTP_PID::wc =
+    WebClient("http://gateway.openfaas.svc.cluster.local:8080/function/pidserver");
 
 #endif

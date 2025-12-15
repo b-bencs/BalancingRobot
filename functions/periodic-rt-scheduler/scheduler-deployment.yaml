@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtfaas-scheduler
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtfaas-scheduler
+  template:
+    metadata:
+      labels:
+        app: rtfaas-scheduler
+    spec:
+      serviceAccountName: rtfaas-scheduler-sa
+      containers:
+        - name: scheduler
+          image: botondbencs/rtfaas-scheduler:latest
+          imagePullPolicy: Always
+          env:
+            - name: SCHEDULER_NAME
+              value: "rtfaas-scheduler"
+            - name: EDF_MODE
+              value: "cpu"        # vagy "node"
+            - name: RT_STATE_FILE
+              value: "/state/rt_state.txt"
+          volumeMounts:
+            - name: state
+              mountPath: /state
+      volumes:
+        - name: state
+          emptyDir: {}

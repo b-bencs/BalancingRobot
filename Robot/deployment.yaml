@@ -13,10 +13,12 @@ spec:
     metadata:
       labels:
         app: robot
+        criticality: be
     spec:
+      schedulerName: rtfaas-scheduler
       containers:
       - name: robot
-        image: mmarci98/edfrobotcontainer_ld2
-        command: ["./myapp","10","100"]  # Substitute timeout and fps here
-      nodeSelector:
-        job: "robot"
+        image: botondbencs/edfrobotcontainer_ld2
+        command: ["./myapp","1","10"]  # Substitute timeout and fps here
+      # nodeSelector:
+      #   job: "robot"
