@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robot
+  namespace: openfaas-fn
   labels:
     app: robot
 spec:
@@ -15,10 +16,12 @@ spec:
         app: robot
         criticality: be
     spec:
-      schedulerName: rtfaas-scheduler
+    #  schedulerName: rtfaas-scheduler
+      nodeSelector:
+        job: "robot"
       containers:
       - name: robot
         image: botondbencs/edfrobotcontainer_ld2
-        command: ["./myapp","1","10"]  # Substitute timeout and fps here
+        command: ["./myapp","50","10"]  # Substitute timeout and fps here
       # nodeSelector:
       #   job: "robot"

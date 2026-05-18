@@ -96,71 +96,37 @@ void initPIDs()
 }
 
 void correction()
+
 {
-    std::mutex m;
-    std::condition_variable cv;
 
-    // correctionReturnStruct ret;
-    HTTP_PID copyMyPIDx(myPIDx);
-    HTTP_PID copyMyPIDpsi(myPIDpsi);
-    HTTP_PID copyMyPIDphi(myPIDphi);
-    long double copyRotation = rotation;
-    long double copyF[2];
-    copyF[0] = F[0];
-    copyF[1] = F[1];
+    try {
 
-    // std::thread t([&cv, &copyMyPIDx, &copyMyPIDpsi, &copyMyPIDphi, &copyRotation, &copyF]() {
-    std::thread t([&cv]()
-                  {
-    	try {
-    	    long double pidx_value = myPIDx.update(myBot.xp, update_delta_time, dt);  // Pid over linear a speed
-    	    long double pidpsi_value = myPIDpsi.update(-myBot.psip, update_delta_time, dt);  // Pid over psi angular speed rotation
+        long double pidx_value = myPIDx.update(myBot.xp, update_delta_time, dt);
 
+        long double pidpsi_value = myPIDpsi.update(-myBot.psip, update_delta_time, dt);
 
-    	    long double tilt = - pidx_value + myBot.phi;
-    	    rotation = pidpsi_value;
-    	    //copyRotation = pidpsi_value;
+        long double tilt = -pidx_value + myBot.phi;
 
-    	    long double pidphi_value = myPIDphi.update(tilt, update_delta_time, dt);  // pid over the pendulum angle phi
-    	    //long double pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
+        rotation = pidpsi_value;
 
-    	    F[0] = -pidphi_value-rotation;
-    	    F[1] = -pidphi_value+rotation;
-    	    //copyF[0] = -pidphi_value-copyRotation;
-    	    //copyF[1] = -pidphi_value+copyRotation;
-    	    // Since there is no webserver, we simulate the missed requests randomly
-    	    /*if(!(rand()%20)) {
-    		std::this_thread::sleep_for(11ms);
-    	    }*/
-    	    cv.notify_one();
-    	}
-    	//Cetches JSON parse error, and sleeps until the timeout passes
-    	catch (...) {
-    	    std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
-    	    //std::this_thread::sleep_for(5ms);
-    	} });
+        long double pidphi_value = myPIDphi.update(tilt, update_delta_time, dt);
 
-    t.detach();
+        F[0] = -pidphi_value - rotation;
 
-    std::unique_lock<std::mutex> l(m);
-    // if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
-    if (cv.wait_for(l, std::chrono::milliseconds(response_timeout)) == std::cv_status::timeout)
-    {
-        // t.join();
-        // printf("runtime_error timeout\n");
-        // throw std::runtime_error("Timeout");
-        // t.join();
-        std::cout << response_timeout << std::endl;
-        throw std::exception();
-        // throw std::runtime_error("Timeout");
+        F[1] = -pidphi_value + rotation;
+
     }
-    /*myPIDx = copyMyPIDx;
-    myPIDpsi = copyMyPIDpsi;
-    myPIDphi = copyMyPIDphi;
-    rotation = copyRotation;
-    F[0] = copyF[0];
-    F[1] = copyF[1];*/
+
+    catch (...) {
+
+        std::cout << "PID exception" << std::endl;
+
+        throw std::exception();
+
+    }
+
 }
+
 
 void timeoutCorrection()
 {
