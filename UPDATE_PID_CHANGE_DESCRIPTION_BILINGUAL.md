@@ -12,7 +12,8 @@ le. A sorszamok a jelenlegi munkakonyvtar allapotara vonatkoznak.
 | File | Lines | English | Magyar |
 | --- | --- | --- | --- |
 | `Robot/Dockerfile` | 10 | Link the robot binary explicitly with pthread support. | A robot binarist explicit pthread tamogatassal linkeljuk. |
-| `Robot/main.cpp` | 252 | Only read both CLI arguments when both are present. | Csak akkor olvassuk be a ket CLI argumentumot, ha mindketto megvan. |
+| `Robot/main.cpp` | 73-156, 178-257, 294, 359-371 | Add optional debug mode and PID/correction timing logs. | Opcionális debug mód és PID/correction idozitesi logok bekerultek. |
+| `Robot/main.cpp` | 354 | Only read both CLI arguments when both are present. | Csak akkor olvassuk be a ket CLI argumentumot, ha mindketto megvan. |
 | `Robot/pid.cpp` | 75-85 | Fix the C++ PID integral update to use the previous error, not the already overwritten current error. | Javitas: a C++ PID integral tagja az elozo hibat hasznalja, ne a mar felulirt aktualis hibat. |
 | `Server/pidserver.py` | 44-51 | Apply the same PID math fix in the direct Flask PID server. | Ugyanez a PID matematikai javitas bekerult a kozvetlen Flask PID szerverbe is. |
 | `functions/pidserver/handler.py` | 8-26 | Bring the OpenFaaS handler up to the same filtered-derivative, time-aware PID formula. | Az OpenFaaS handler ugyanazt a szurt derivalt, idoalapu PID kepletet hasznalja, mint a tobbi komponens. |
@@ -51,7 +52,226 @@ Magyar:
 
 ## `Robot/main.cpp`
 
-### Line 252
+### Lines 73-74
+
+Added:
+
+```cpp
+bool debug_mode = false;
+std::mutex debug_log_mutex;
+```
+
+English:
+
+- `debug_mode` is false by default, so normal robot logs stay quiet.
+- `debug_log_mutex` serializes debug output from the main loop and the
+  correction worker thread.
+
+Magyar:
+
+- A `debug_mode` alapertelmezetten false, tehat a normal robot log nem lesz
+  zajosabb.
+- A `debug_log_mutex` sorosítja a debug kimenetet a main loop es a correction
+  worker thread kozott.
+
+### Lines 84-99
+
+Added:
+
+```cpp
+std::string lowerString(std::string value)
+bool parseDebugFlag(const char* value)
+```
+
+English:
+
+- `lowerString` normalizes the debug flag text.
+- `parseDebugFlag` treats `1`, `true`, `yes` and `on` as enabled values.
+- Any other value, including `false` and `0`, leaves debug logging disabled.
+
+Magyar:
+
+- A `lowerString` normalizalja a debug flag szoveget.
+- A `parseDebugFlag` a `1`, `true`, `yes` es `on` ertekeket tekinti
+  bekapcsolt allapotnak.
+- Minden mas ertek, peldaul `false` vagy `0`, kikapcsolt debug logot jelent.
+
+### Lines 101-109
+
+Added:
+
+```cpp
+void debugLog(const std::string& message)
+```
+
+English:
+
+- Central debug logging helper.
+- If `debug_mode` is false, it returns immediately.
+- If debug mode is true, it prints to `stderr` with a prefix like
+  `[robot-debug t=1.234s]`.
+- The timestamp is robot process elapsed time from `getElapsedTime()`.
+
+Magyar:
+
+- Kozponti debug logolo segedfuggveny.
+- Ha a `debug_mode` false, azonnal visszater.
+- Ha a debug mod true, `stderr`-re ir ilyen prefixszel:
+  `[robot-debug t=1.234s]`.
+- Az idobelyeg a robot process inditasa ota eltelt ido a `getElapsedTime()`
+  szerint.
+
+### Lines 111-156
+
+Added:
+
+```cpp
+long double timedPidUpdate(...)
+```
+
+English:
+
+- Wraps a single remote PID update call.
+- Logs the PID axis (`x`, `psi`, `phi`) at request start.
+- Logs `current_value`, `update_delta_time` and `expected_dt`.
+- Measures wall-clock request duration with `std::chrono`.
+- On success, logs `duration_ms` and returned PID result.
+- On `std::exception`, logs `duration_ms` and `error.what()`, then rethrows.
+- On unknown exception, logs `duration_ms`, then rethrows.
+
+Magyar:
+
+- Egyetlen tavoli PID update hivast csomagol be.
+- A request elejen logolja a PID tengelyt (`x`, `psi`, `phi`).
+- Logolja a `current_value`, `update_delta_time` es `expected_dt` ertekeket.
+- `std::chrono` segitsegevel meri a request falioras idejet.
+- Siker eseten logolja a `duration_ms` erteket es a visszakapott PID
+  eredmenyt.
+- `std::exception` eseten logolja a `duration_ms` erteket es az
+  `error.what()` uzenetet, majd ujradobja a kivetelt.
+- Ismeretlen kivetel eseten logolja a `duration_ms` erteket, majd ujradobja a
+  kivetelt.
+
+### Lines 180-182
+
+Added:
+
+```cpp
+debugLog("correction start timeout_ms=...");
+```
+
+English:
+
+- Logs the configured correction timeout at the beginning of each correction
+  attempt.
+- This makes it clear which timeout value was active for that cycle.
+
+Magyar:
+
+- Minden correction probalkozas elejen logolja az aktiv timeout erteket.
+- Igy egyertelmu, melyik timeout ertek volt ervenyes az adott ciklusban.
+
+### Lines 200-208
+
+Changed:
+
+```cpp
+timedPidUpdate("x", ...)
+timedPidUpdate("psi", ...)
+timedPidUpdate("phi", ...)
+```
+
+English:
+
+- The three serial PID requests now go through the timing wrapper.
+- The control behavior is unchanged: the calls are still made in order.
+- The new information is only debug timing and error visibility.
+
+Magyar:
+
+- A harom soros PID request most az idomeresi wrapperen megy at.
+- A vezerles viselkedese nem valtozik: a hivasok tovabbra is sorrendben
+  futnak.
+- Az uj informacio csak debug idozites es hibalathatosag.
+
+### Lines 222-237
+
+Changed:
+
+```cpp
+catch (const std::exception& error) { ... }
+catch (...) { ... }
+```
+
+English:
+
+- The worker catch block is now split into known and unknown exceptions.
+- Known exceptions log the exception text via `error.what()`.
+- Both branches log that the worker will sleep for `response_timeout`
+  milliseconds.
+- This is the better log for the old catch block near line 138 in the earlier
+  file layout.
+
+Magyar:
+
+- A worker catch blokk most ismert es ismeretlen kivetelekre van szetvalasztva.
+- Ismert kivetel eseten logolja az `error.what()` szoveget.
+- Mindket ag logolja, hogy a worker `response_timeout` milliszekundumig fog
+  aludni.
+- Ez a jobb log a korabbi fajlelhelyezes szerinti 138. sor kornyeki catch
+  blokkhoz.
+
+### Lines 243-257
+
+Changed:
+
+```cpp
+if (cv.wait_for(...) == std::cv_status::timeout) {
+    debugLog("correction wait result main_thread_timeout=true ...");
+    ...
+}
+debugLog("correction wait result main_thread_timeout=false");
+```
+
+English:
+
+- This directly answers whether the main thread timed out at the wait point.
+- If the `wait_for` call times out, the log contains
+  `main_thread_timeout=true`.
+- If the worker notifies before timeout, the log contains
+  `main_thread_timeout=false`.
+
+Magyar:
+
+- Ez kozvetlenul megvalaszolja, hogy a main thread timeoutolt-e a varakozasi
+  ponton.
+- Ha a `wait_for` timeouttal ter vissza, a logban
+  `main_thread_timeout=true` szerepel.
+- Ha a worker idoben notify-ol, a logban `main_thread_timeout=false` szerepel.
+
+### Line 294
+
+Added:
+
+```cpp
+debugLog("timeoutCorrection catch: restoring PID state and motor forces");
+```
+
+English:
+
+- Logs when the outer timeout handler restores the saved PID state and motor
+  forces.
+- This marks the point where the failed correction becomes a robot-level
+  timeout sample.
+
+Magyar:
+
+- Logolja, amikor a kulso timeout handler visszaallitja a mentett PID
+  allapotot es motoreroket.
+- Ez jeloli azt a pontot, ahol a sikertelen correction robot szintu timeout
+  mintava valik.
+
+### Line 354
 
 Before:
 
@@ -82,6 +302,41 @@ Magyar:
   beolvasni a hianyzo `argv[2]` erteket.
 - Az uj feltetel csak akkor olvassa be az ertekeket, ha mindket argumentum
   jelen van.
+
+### Lines 359-371
+
+Added:
+
+```cpp
+const char* debug_env = std::getenv("ROBOT_DEBUG");
+...
+if (argc > 3) {
+    debug_mode = parseDebugFlag(argv[3]);
+}
+...
+debugLog("debug enabled ...");
+```
+
+English:
+
+- Debug mode can be enabled with the `ROBOT_DEBUG` environment variable.
+- It can also be enabled with an optional third CLI argument.
+- Example environment use: `ROBOT_DEBUG=true`.
+- Example CLI use: `./myapp 1200 10 true`.
+- The CLI argument wins if both the environment variable and CLI argument are
+  present.
+- When debug is enabled, startup logs the active timeout, FPS and `dt`.
+
+Magyar:
+
+- A debug mod bekapcsolhato a `ROBOT_DEBUG` kornyezeti valtozoval.
+- Bekapcsolhato opcionális harmadik CLI argumentummal is.
+- Kornyezeti pelda: `ROBOT_DEBUG=true`.
+- CLI pelda: `./myapp 1200 10 true`.
+- Ha a kornyezeti valtozo es a CLI argumentum is jelen van, a CLI argumentum
+  dont.
+- Bekapcsolt debug modnal indulaskor logolja az aktiv timeoutot, FPS-t es
+  `dt` erteket.
 
 ## `Robot/pid.cpp`
 

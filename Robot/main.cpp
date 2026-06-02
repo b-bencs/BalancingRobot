@@ -9,6 +9,10 @@
 #include <thread>
 #include <unistd.h>
 #include <limits.h>
+#include <cstdlib>
+#include <cctype>
+#include <sstream>
+#include <string>
 #include "ibalancingbot.cpp"
 #include "pid.cpp"
 #include "http_pid.cpp"
@@ -66,6 +70,8 @@ HTTP_PID myPIDx = HTTP_PID("http://10.44.0.7:5000/pid");
 HTTP_PID myPIDpsi = HTTP_PID("http://10.44.0.7:5000/pid");
 InfluxDBWriter influxdbwriter;
 bool timeout_happened = false;
+bool debug_mode = false;
+std::mutex debug_log_mutex;
 
 using namespace std::literals::chrono_literals;
 
@@ -73,6 +79,80 @@ long double getElapsedTime() {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<long double, std::ratio<1>> duration = end - start_t;
     return duration.count();
+}
+
+std::string lowerString(std::string value) {
+    for (char& c : value) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    return value;
+}
+
+bool parseDebugFlag(const char* value) {
+    if (value == nullptr) {
+        return false;
+    }
+
+    std::string normalized = lowerString(std::string(value));
+    return normalized == "1" || normalized == "true" ||
+           normalized == "yes" || normalized == "on";
+}
+
+void debugLog(const std::string& message) {
+    if (!debug_mode) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(debug_log_mutex);
+    std::cerr << "[robot-debug t=" << static_cast<double>(getElapsedTime())
+              << "s] " << message << std::endl;
+}
+
+long double timedPidUpdate(const std::string& axis,
+                           HTTP_PID& pid,
+                           long double current_value) {
+    std::ostringstream start_message;
+    start_message << "PID " << axis << " request start"
+                  << " current_value=" << static_cast<double>(current_value)
+                  << " update_delta_time=" << static_cast<double>(update_delta_time)
+                  << " expected_dt=" << static_cast<double>(dt);
+    debugLog(start_message.str());
+
+    auto request_start = std::chrono::high_resolution_clock::now();
+    try {
+        long double result = pid.update(current_value, update_delta_time, dt);
+        auto request_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<long double, std::milli> duration =
+            request_end - request_start;
+
+        std::ostringstream success_message;
+        success_message << "PID " << axis << " request ok"
+                        << " duration_ms=" << static_cast<double>(duration.count())
+                        << " result=" << static_cast<double>(result);
+        debugLog(success_message.str());
+        return result;
+    } catch (const std::exception& error) {
+        auto request_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<long double, std::milli> duration =
+            request_end - request_start;
+
+        std::ostringstream error_message;
+        error_message << "PID " << axis << " request exception"
+                      << " duration_ms=" << static_cast<double>(duration.count())
+                      << " error=\"" << error.what() << "\"";
+        debugLog(error_message.str());
+        throw;
+    } catch (...) {
+        auto request_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<long double, std::milli> duration =
+            request_end - request_start;
+
+        std::ostringstream error_message;
+        error_message << "PID " << axis << " request unknown exception"
+                      << " duration_ms=" << static_cast<double>(duration.count());
+        debugLog(error_message.str());
+        throw;
+    }
 }
 
 void initPIDs()
@@ -97,6 +177,10 @@ void initPIDs()
 
 void correction()
 {
+    std::ostringstream start_message;
+    start_message << "correction start timeout_ms=" << response_timeout;
+    debugLog(start_message.str());
+
     std::mutex m;
     std::condition_variable cv;
 
@@ -112,33 +196,45 @@ void correction()
     // std::thread t([&cv, &copyMyPIDx, &copyMyPIDpsi, &copyMyPIDphi, &copyRotation, &copyF]() {
     std::thread t([&cv]()
                   {
-    	try {
-    	    long double pidx_value = myPIDx.update(myBot.xp, update_delta_time, dt);  // Pid over linear a speed
-    	    long double pidpsi_value = myPIDpsi.update(-myBot.psip, update_delta_time, dt);  // Pid over psi angular speed rotation
+        try {
+            long double pidx_value = timedPidUpdate("x", myPIDx, myBot.xp);  // Pid over linear a speed
+            long double pidpsi_value = timedPidUpdate("psi", myPIDpsi, -myBot.psip);  // Pid over psi angular speed rotation
 
 
-    	    long double tilt = - pidx_value + myBot.phi;
-    	    rotation = pidpsi_value;
-    	    //copyRotation = pidpsi_value;
+            long double tilt = - pidx_value + myBot.phi;
+            rotation = pidpsi_value;
+            //copyRotation = pidpsi_value;
 
-    	    long double pidphi_value = myPIDphi.update(tilt, update_delta_time, dt);  // pid over the pendulum angle phi
-    	    //long double pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
+            long double pidphi_value = timedPidUpdate("phi", myPIDphi, tilt);  // pid over the pendulum angle phi
+            //long double pidphi_value = copyMyPIDphi.update(tilt);  // pid over the pendulum angle phi
 
-    	    F[0] = -pidphi_value-rotation;
-    	    F[1] = -pidphi_value+rotation;
-    	    //copyF[0] = -pidphi_value-copyRotation;
-    	    //copyF[1] = -pidphi_value+copyRotation;
-    	    // Since there is no webserver, we simulate the missed requests randomly
-    	    /*if(!(rand()%20)) {
-    		std::this_thread::sleep_for(11ms);
-    	    }*/
-    	    cv.notify_one();
-    	}
-    	//Cetches JSON parse error, and sleeps until the timeout passes
-    	catch (...) {
-    	    std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
-    	    //std::this_thread::sleep_for(5ms);
-    	} });
+            F[0] = -pidphi_value-rotation;
+            F[1] = -pidphi_value+rotation;
+            //copyF[0] = -pidphi_value-copyRotation;
+            //copyF[1] = -pidphi_value+copyRotation;
+            // Since there is no webserver, we simulate the missed requests randomly
+            /*if(!(rand()%20)) {
+                std::this_thread::sleep_for(11ms);
+            }*/
+            cv.notify_one();
+        }
+        //Cetches JSON parse error, and sleeps until the timeout passes
+        catch (const std::exception& error) {
+            std::ostringstream message;
+            message << "correction worker catch exception=\""
+                    << error.what() << "\" sleep_ms=" << response_timeout;
+            debugLog(message.str());
+            std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
+            //std::this_thread::sleep_for(5ms);
+        }
+        catch (...) {
+            std::ostringstream message;
+            message << "correction worker catch unknown exception sleep_ms="
+                    << response_timeout;
+            debugLog(message.str());
+            std::this_thread::sleep_for(std::chrono::milliseconds(response_timeout));
+            //std::this_thread::sleep_for(5ms);
+        } });
 
     t.detach();
 
@@ -146,6 +242,10 @@ void correction()
     // if(cv.wait_for(l, 20ms) == std::cv_status::timeout) {
     if (cv.wait_for(l, std::chrono::milliseconds(response_timeout)) == std::cv_status::timeout)
     {
+        std::ostringstream timeout_message;
+        timeout_message << "correction wait result main_thread_timeout=true"
+                        << " timeout_ms=" << response_timeout;
+        debugLog(timeout_message.str());
         // t.join();
         // printf("runtime_error timeout\n");
         // throw std::runtime_error("Timeout");
@@ -154,6 +254,7 @@ void correction()
         throw std::exception();
         // throw std::runtime_error("Timeout");
     }
+    debugLog("correction wait result main_thread_timeout=false");
     /*myPIDx = copyMyPIDx;
     myPIDpsi = copyMyPIDpsi;
     myPIDphi = copyMyPIDphi;
@@ -190,6 +291,7 @@ void timeoutCorrection()
     // catch(std::runtime_error& e) {
     catch (...)
     {
+        debugLog("timeoutCorrection catch: restoring PID state and motor forces");
         // printf("runtime_error timeout\n");
         std::this_thread::sleep_for(10ms);
         timeout_happened = true;
@@ -254,7 +356,19 @@ int main(int argc, char **argv)
         response_timeout = std::atoll(argv[1]);
         FPS = std::atoll(argv[2]);
     }
+    const char* debug_env = std::getenv("ROBOT_DEBUG");
+    if (debug_env != nullptr) {
+        debug_mode = parseDebugFlag(debug_env);
+    }
+    if (argc > 3) {
+        debug_mode = parseDebugFlag(argv[3]);
+    }
     dt = 1.0f / FPS;
+    std::ostringstream config_message;
+    config_message << "debug enabled response_timeout_ms=" << response_timeout
+                   << " FPS=" << FPS
+                   << " dt=" << static_cast<double>(dt);
+    debugLog(config_message.str());
     // std::thread correctionThread(threadCorrection);
     srand((unsigned)time(0));
     initPIDs();
