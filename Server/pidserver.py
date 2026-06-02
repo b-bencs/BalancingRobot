@@ -41,13 +41,14 @@ def pid():
             alpha = d["dt"]/(d["dt"] + tau)
 
             #Calculate raw derivative and apply low-pass filter
-            raw_derivative = (error - d["Derivator"]) / d["dt"]
+            previous_error = d["Derivator"]
+            raw_derivative = (error - previous_error) / d["dt"]
             D_value = (1.0 - alpha) * d["D_value"] + alpha * raw_derivative
 
             Derivator = error #Save error for next loop
             D_term = d["Kd"] * D_value
 
-            Integrator = d["Integrator"] + 0.5 * (error + Derivator) * d["dt"]
+            Integrator = d["Integrator"] + 0.5 * (error + previous_error) * d["dt"]
             if Integrator > d["Integrator_max"]:
                 Integrator = d["Integrator_max"]
             elif Integrator < d["Integrator_min"]:

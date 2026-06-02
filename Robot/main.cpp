@@ -249,7 +249,7 @@ int main(int argc, char **argv)
     // influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"));
     influxdbwriter = InfluxDBWriter(std::string("http://influxdb.default.svc.cluster.local:8086"), std::string("robot"), std::string(hostname));
     // influxdbwriter = InfluxDBWriter("http://influxdb.default.svc.cluster.local:8086", "robot", hostname);
-    if (argc > 1)
+    if (argc > 2)
     {
         response_timeout = std::atoll(argv[1]);
         FPS = std::atoll(argv[2]);

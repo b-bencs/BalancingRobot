@@ -72,7 +72,8 @@ struct PID {
         long double alpha = dt / (dt + tau);
     
         // Calculate raw derivative and apply low-pass filter
-        long double raw_derivative = (this->error - this->Derivator) / dt;
+        long double previous_error = this->Derivator;
+        long double raw_derivative = (this->error - previous_error) / dt;
         this->D_value = (1.0 - alpha) * this->D_value + alpha * raw_derivative;
         long double filtered_derivative = this->D_value;  // for clarity
     
@@ -81,7 +82,7 @@ struct PID {
     
         // Integral term with manual clamping
         // this->Integrator += this->error * dt;
-        this->Integrator += 0.5 * (this->error + this->Derivator) * dt;
+        this->Integrator += 0.5 * (this->error + previous_error) * dt;
         if (this->Integrator > this->Integrator_max) {
             this->Integrator = this->Integrator_max;
         } else if (this->Integrator < this->Integrator_min) {
