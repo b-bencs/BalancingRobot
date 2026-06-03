@@ -45,8 +45,7 @@ English:
 Magyar:
 
 - Hozzaadtuk a `-pthread` kapcsolot a forditasi/linkelesi parancshoz.
-- A robot kod hasznal `std::thread`, `std::mutex` es
-  `std::condition_variable` elemeket.
+- A robot kod hasznal `std::thread`, `std::mutex` es  `std::condition_variable` elemeket.
 - Linuxon a C++ thread tamogatast erdemes explicit modon linkelni.
 - Igy a Docker build kevesbe fugg az implicit linker viselkedestol.
 

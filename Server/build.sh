@@ -1,2 +1,2 @@
-docker build -t szefoka/edf-pidserver .
-docker push szefoka/edf-pidserver
+docker build -t botondbencs/edf-pidserver .
+docker push botondbencs/edf-pidserver

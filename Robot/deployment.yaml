@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: robot
-        image: mmarci98/edfrobotcontainer_ld2
-        command: ["./myapp","10","100"]  # Substitute timeout and fps here
+        image: botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603
+        imagePullPolicy: Always
+        command: ["./myapp","100","100", "true"]  # Substitute timeout and fps here and debug flag
       nodeSelector:
         job: "robot"

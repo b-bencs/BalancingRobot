@@ -1,0 +1,63 @@
+@startuml
+title Current Robot Operation with OpenFaaS PID
+
+start
+
+partition "Robot pod on gamma" {
+  :Start ./myapp 100 100 true;
+  :Create InfluxDB writer\nhttp://influxdb.default.svc.cluster.local:8086;
+  :Initialize PID state\nx, psi, phi;
+  :Enable debug logging;
+
+  repeat
+    :Compute current time,\ndelta_time and update_delta_time;
+
+    if (delta_time > 1/FPS?) then (yes)
+      if (abs(phi) <= 0.785?) then (balanced)
+        :Advance robot dynamics\nusing previous motor forces F[0], F[1];
+        :Save current PID state,\nrotation and motor forces;
+
+        partition "Correction worker thread" {
+          :POST x PID request;
+          :POST psi PID request;
+          :Compute tilt = -PID_x + phi;
+          :POST phi PID request;
+        }
+
+        partition "OpenFaaS pidserver on beta" {
+          :Receive PID JSON request\n/pid;
+          :Calculate PID result;
+          :Return JSON response;
+        }
+
+        partition "Robot pod on gamma" {
+          if (worker finished before 100 ms?) then (yes)
+            :Keep updated PID state;
+            :Update rotation and motor forces;
+            :timeout_happened = false;
+          else (timeout or exception)
+            :Restore saved PID state,\nrotation and motor forces;
+            :timeout_happened = true;
+          endif
+        }
+      else (fallen)
+        :Set fallen sentinel\nphi = +/-2.03;
+        :Skip PID correction;
+      endif
+
+      :Write angle, timeout and delta_time\nto InfluxDB measurement angle;
+
+      partition "InfluxDB and Grafana" {
+        :Store angle point tagged by robotname;
+        :Grafana reads angle and timeout panels;
+      }
+
+      :Reset timeout flag;
+    else (no)
+      :Spin until next frame;
+    endif
+  repeat while (container is running?) is (yes)
+}
+
+stop
+@enduml
