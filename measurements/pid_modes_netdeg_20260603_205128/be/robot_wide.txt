@@ -1,0 +1,2 @@
+NAME                     READY   STATUS   RESTARTS   AGE   IP             NODE    NOMINATED NODE   READINESS GATES
+robot-569bb9748d-wqd8s   0/1     Error    0          5s    10.244.2.176   gamma   <none>           <none>

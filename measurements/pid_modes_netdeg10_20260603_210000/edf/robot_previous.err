@@ -1,0 +1,1 @@
+Error from server (BadRequest): previous terminated container "robot" in pod "robot-5f4d4d5784-6fh5f" not found

@@ -1,0 +1,5 @@
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                             SELECTOR
+deployment.apps/pidserver   1/1     1            1           11h   pidserver    botondbencs/edf-pidserver:latest   faas_function=pidserver
+
+NAME                             READY   STATUS    RESTARTS   AGE   IP             NODE   NOMINATED NODE   READINESS GATES
+pod/pidserver-7c4f54fb7c-dnqck   1/1     Running   0          9s    10.244.1.183   beta   <none>           <none>

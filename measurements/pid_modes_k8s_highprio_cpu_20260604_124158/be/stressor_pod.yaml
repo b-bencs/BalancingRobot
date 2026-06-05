@@ -1,0 +1,151 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"app":"rtfaas-cpu-stressor","measurement":"k8s-highprio-cpu","mode":"be"},"name":"rtfaas-cpu-stressor-be-1780569733","namespace":"default"},"spec":{"containers":[{"command":["sh","-c","echo starting k8s high-priority CPU stressor mode=be\nfor i in 1 2 3 4; do python -c \"while True: pass\" \u0026 done\nwait\n"],"image":"botondbencs/edf-pidserver:latest","imagePullPolicy":"IfNotPresent","name":"stressor","resources":{"limits":{"memory":"256Mi"},"requests":{"cpu":"3500m","memory":"64Mi"}}}],"nodeSelector":{"kubernetes.io/hostname":"beta"},"priorityClassName":"rtfaas-high-priority-stressor","restartPolicy":"Never"}}
+  creationTimestamp: "2026-06-04T10:42:13Z"
+  generation: 1
+  labels:
+    app: rtfaas-cpu-stressor
+    measurement: k8s-highprio-cpu
+    mode: be
+  name: rtfaas-cpu-stressor-be-1780569733
+  namespace: default
+  resourceVersion: "9290409"
+  uid: bfbb4dcb-703b-4af3-b8cc-0f46d69227ad
+spec:
+  containers:
+  - command:
+    - sh
+    - -c
+    - |
+      echo starting k8s high-priority CPU stressor mode=be
+      for i in 1 2 3 4; do python -c "while True: pass" & done
+      wait
+    image: botondbencs/edf-pidserver:latest
+    imagePullPolicy: IfNotPresent
+    name: stressor
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 3500m
+        memory: 64Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-fwb8z
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: beta
+  nodeSelector:
+    kubernetes.io/hostname: beta
+  preemptionPolicy: PreemptLowerPriority
+  priority: 1000000
+  priorityClassName: rtfaas-high-priority-stressor
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: kube-api-access-fwb8z
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2026-06-04T10:37:08Z"
+    observedGeneration: 1
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2026-06-04T10:37:07Z"
+    observedGeneration: 1
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2026-06-04T10:37:08Z"
+    observedGeneration: 1
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2026-06-04T10:37:08Z"
+    observedGeneration: 1
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2026-06-04T10:42:13Z"
+    observedGeneration: 1
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - allocatedResources:
+      cpu: 3500m
+      memory: 64Mi
+    containerID: containerd://21fd970e6079880bdc20a3e0694ffc4da1ce704493cc4066ff4e194dee2d4f3e
+    image: docker.io/botondbencs/edf-pidserver:latest
+    imageID: docker.io/botondbencs/edf-pidserver@sha256:bd50c83ba81c706b2240ba1ef02ab3d5d704054e546e12750d182a5d8a4eb5e0
+    lastState: {}
+    name: stressor
+    ready: true
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 3500m
+        memory: 64Mi
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2026-06-04T10:37:08Z"
+    user:
+      linux:
+        gid: 101
+        supplementalGroups:
+        - 101
+        uid: 100
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-fwb8z
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 192.168.0.201
+  hostIPs:
+  - ip: 192.168.0.201
+  observedGeneration: 1
+  phase: Running
+  podIP: 10.244.1.189
+  podIPs:
+  - ip: 10.244.1.189
+  qosClass: Burstable
+  startTime: "2026-06-04T10:37:07Z"

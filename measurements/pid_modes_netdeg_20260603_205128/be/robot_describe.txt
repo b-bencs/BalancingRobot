@@ -1,0 +1,62 @@
+Name:             robot-569bb9748d-wqd8s
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gamma/192.168.0.203
+Start Time:       Wed, 03 Jun 2026 20:51:28 +0200
+Labels:           app=robot
+                  pod-template-hash=569bb9748d
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-06-03T20:51:38+02:00
+Status:           Running
+IP:               10.244.2.176
+IPs:
+  IP:           10.244.2.176
+Controlled By:  ReplicaSet/robot-569bb9748d
+Containers:
+  robot:
+    Container ID:  containerd://029d9a7bf00a025372633fd0f2ad646f87a54f3d31abf114e1d18e89476961ea
+    Image:         botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603
+    Image ID:      docker.io/botondbencs/edfrobotcontainer_ld2@sha256:56c6dd88f18389709d9c85453bbe08a57e7e808678ad2309a0bd92a6770524ed
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      ./myapp
+      100
+      100
+      true
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    139
+      Started:      Wed, 03 Jun 2026 20:51:31 +0200
+      Finished:     Wed, 03 Jun 2026 20:51:31 +0200
+    Ready:          False
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-47nwj (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-47nwj:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              job=robot
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age                From               Message
+  ----    ------     ----               ----               -------
+  Normal  Pulled     13s                kubelet            spec.containers{robot}: Successfully pulled image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603" in 1.687s (1.687s including waiting). Image size: 824763809 bytes.
+  Normal  Created    13s                kubelet            spec.containers{robot}: Container created
+  Normal  Started    12s                kubelet            spec.containers{robot}: Container started
+  Normal  Pulling    10s (x2 over 15s)  kubelet            spec.containers{robot}: Pulling image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603"
+  Normal  Scheduled  5s                 default-scheduler  Successfully assigned default/robot-569bb9748d-wqd8s to gamma

@@ -1,0 +1,96 @@
+@startuml
+title Current Robot Runtime State Machine
+
+[*] --> ContainerStarting
+
+ContainerStarting : Kubernetes starts robot pod on gamma
+ContainerStarting : command ./myapp 100 100 true
+ContainerStarting --> Configured : main()
+
+Configured : create InfluxDB writer
+Configured : parse response_timeout, FPS, debug flag
+Configured : initPIDs()
+Configured --> WaitingForFrame
+
+WaitingForFrame : spin in animation()
+WaitingForFrame --> FrameDue : delta_time > 1/FPS
+WaitingForFrame --> ContainerCrash : process exits / segfault
+
+FrameDue : compute delta_time
+FrameDue : compute update_delta_time
+FrameDue --> ResetRobot : phi and phip are near zero
+FrameDue --> BalanceCheck : normal frame
+
+ResetRobot : myBot.initRobot()
+ResetRobot --> BalanceCheck
+
+BalanceCheck --> DynamicsAdvanced : abs(phi) <= 0.785
+BalanceCheck --> FallenSaturated : phi > 0.785
+BalanceCheck --> FallenSaturated : phi < -0.785
+
+DynamicsAdvanced : myBot.dynamics(delta_time, F)
+DynamicsAdvanced : update x/z position
+DynamicsAdvanced --> SaveCorrectionState
+
+SaveCorrectionState : save PID x, psi, phi
+SaveCorrectionState : save rotation and motor forces
+SaveCorrectionState --> CorrectionWorkerRunning
+
+state CorrectionWorkerRunning {
+  [*] --> RequestX
+  RequestX : timedPidUpdate("x")
+  RequestX --> RequestPsi : x PID response parsed
+  RequestX --> WorkerException : HTTP/JSON error
+
+  RequestPsi : timedPidUpdate("psi")
+  RequestPsi --> RequestPhi : psi PID response parsed
+  RequestPsi --> WorkerException : HTTP/JSON error
+
+  RequestPhi : tilt = -PID_x + phi
+  RequestPhi : timedPidUpdate("phi")
+  RequestPhi --> WorkerCompleted : phi PID response parsed
+  RequestPhi --> WorkerException : HTTP/JSON error
+
+  WorkerCompleted : update rotation
+  WorkerCompleted : update F[0], F[1]
+  WorkerCompleted : cv.notify_one()
+  WorkerCompleted --> [*]
+
+  WorkerException : log exception
+  WorkerException : sleep response_timeout ms
+  WorkerException --> [*]
+}
+
+CorrectionWorkerRunning --> WaitingForCorrection
+
+WaitingForCorrection : main thread waits on condition_variable
+WaitingForCorrection --> PIDApplied : worker notifies before 100 ms
+WaitingForCorrection --> TimeoutRecovery : wait_for reaches 100 ms
+WaitingForCorrection --> TimeoutRecovery : exception reaches timeoutCorrection()
+
+PIDApplied : keep new PID state
+PIDApplied : keep new motor forces
+PIDApplied : timeout_happened=false
+PIDApplied : update_ref_time=now
+PIDApplied --> WriteInflux
+
+TimeoutRecovery : restore saved PID state
+TimeoutRecovery : restore rotation and motor forces
+TimeoutRecovery : timeout_happened=true
+TimeoutRecovery : keep previous update_ref_time
+TimeoutRecovery --> WriteInflux
+
+FallenSaturated : set phi to +2.03 or -2.03
+FallenSaturated : skip PID correction
+FallenSaturated --> WriteInflux
+
+WriteInflux : write measurement angle
+WriteInflux : fields value, timeout, delta_time
+WriteInflux : tag robotname=pod hostname
+WriteInflux : reset timeout_happened=false
+WriteInflux --> WaitingForFrame
+
+ContainerCrash : Kubernetes may restart container
+ContainerCrash --> ContainerStarting : restart policy
+
+@enduml

@@ -1,0 +1,191 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      com.openfaas.k8s.node-selector: kubernetes.io/hostname=beta
+      prometheus.io.scrape: "false"
+      rt-p-ms: "10"
+      rt-q-ms: "4"
+    creationTimestamp: "2026-06-03T19:16:17Z"
+    generateName: pidserver-5648895df5-
+    generation: 1
+    labels:
+      criticality: rt
+      faas_function: pidserver
+      pod-template-hash: 5648895df5
+      uid: "813948883"
+    name: pidserver-5648895df5-lbgrh
+    namespace: openfaas-fn
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: pidserver-5648895df5
+      uid: ac5b2214-eca7-4a6a-8406-7737cf477d2e
+    resourceVersion: "9206063"
+    uid: 92a7d102-af08-45c8-867f-d633679ef35b
+  spec:
+    containers:
+    - env:
+      - name: EDFDEADLINE
+        value: "10"
+      - name: EDFPERIOD
+        value: "10"
+      - name: EDFRUNTIME
+        value: "4"
+      - name: fprocess
+        value: python index.py
+      image: botondbencs/edf-pidserver:latest
+      imagePullPolicy: Always
+      livenessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /_/health
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 2
+        periodSeconds: 2
+        successThreshold: 1
+        timeoutSeconds: 1
+      name: pidserver
+      ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /_/health
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 2
+        periodSeconds: 2
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources:
+        limits:
+          cpu: 400m
+        requests:
+          cpu: 400m
+      securityContext:
+        privileged: true
+        readOnlyRootFilesystem: false
+        runAsUser: 0
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-p5lml
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: beta
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: rtfaas-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-p5lml
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:11:17Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:11:15Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:11:20Z"
+      observedGeneration: 1
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:11:20Z"
+      observedGeneration: 1
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:16:18Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - allocatedResources:
+        cpu: 400m
+      containerID: containerd://26857fa232f235d3dc2b99198351c541227b05ee8fd6dad5f35bd0268c7c677b
+      image: docker.io/botondbencs/edf-pidserver:latest
+      imageID: docker.io/botondbencs/edf-pidserver@sha256:bd50c83ba81c706b2240ba1ef02ab3d5d704054e546e12750d182a5d8a4eb5e0
+      lastState: {}
+      name: pidserver
+      ready: true
+      resources:
+        limits:
+          cpu: 400m
+        requests:
+          cpu: 400m
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2026-06-03T19:11:17Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 0
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-p5lml
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 192.168.0.201
+    hostIPs:
+    - ip: 192.168.0.201
+    observedGeneration: 1
+    phase: Running
+    podIP: 10.244.1.186
+    podIPs:
+    - ip: 10.244.1.186
+    qosClass: Burstable
+    startTime: "2026-06-03T19:11:15Z"
+kind: List
+metadata:
+  resourceVersion: ""

@@ -1,0 +1,198 @@
+apiVersion: v1
+data:
+  rt_scheduler.py: |
+    from . import state_manager
+    from . import k8s_client
+
+    NODE_BLACKLIST = {
+        "node1.rtkube.cloudnet-pg0.wisc.cloudlab.us",
+    }
+
+    def is_rt_pod(pod):
+        labels = pod.metadata.labels or {}
+        return labels.get("criticality") == "rt"
+
+
+    def _safe_float(val, default):
+        if val is None:
+            return default
+        try:
+            s = str(val).strip()
+            if s == "":
+                return default
+            return float(s)
+        except ValueError:
+            return default
+
+    OPENFAAS_NODE_SELECTOR_ANNOTATION = "com.openfaas.k8s.node-selector"
+
+
+    def _openfaas_annotation_node_selector(pod) -> dict:
+        ann = getattr(pod.metadata, "annotations", None) or {}
+        raw = ann.get(OPENFAAS_NODE_SELECTOR_ANNOTATION, "")
+        result = {}
+
+        # OpenFaaS stores selectors as strings like: kubernetes.io/hostname=beta
+        for item in str(raw).split(","):
+            item = item.strip()
+            if not item or "=" not in item:
+                continue
+            key, value = item.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if key and value:
+                result[key] = value
+
+        return result
+
+
+    def _matches_node_selector(pod, node) -> bool:
+        sel = dict(getattr(pod.spec, "node_selector", None) or {})
+        sel.update(_openfaas_annotation_node_selector(pod))
+
+        if not sel:
+            return True
+        labels = getattr(node.metadata, "labels", None) or {}
+        for k, v in sel.items():
+            if labels.get(k) != v:
+                return False
+        return True
+
+    def get_rt_params(pod):
+        ann = pod.metadata.annotations or {}
+        if "rt-q-ms" not in ann or "rt-p-ms" not in ann:
+            return None, None
+        q_ms = _safe_float(ann.get("rt-q-ms"), None)
+        p_ms = _safe_float(ann.get("rt-p-ms"), None)
+        if q_ms is None or p_ms is None or p_ms <= 0:
+            return None, None
+        u = q_ms / p_ms
+        return u, p_ms
+
+
+    def filter_nodes_for_rt(pod, nodes):
+        """
+        Itt lehetne CPU/memoria predicate
+        TODO
+        """
+        result = []
+        for n in nodes:
+            node_name = getattr(n.metadata, "name", None)
+            if not node_name:
+                continue
+            if not _matches_node_selector(pod, n):
+                continue
+            if node_name in NODE_BLACKLIST:
+                continue
+            conds = getattr(n.status, "conditions", []) or []
+            ready = any(c.type == "Ready" and c.status == "True" for c in conds)
+            if not ready:
+                continue
+
+            result.append(n)
+        return result
+
+
+    def can_place_on_node_cpu_mode(node_name, cpu_count, u_new):
+        node_cpu_map, _u_unknown = _cpu_map_with_unknown(node_name, cpu_count)
+        for cpu_idx in range(cpu_count):
+            u_cur = node_cpu_map.get(cpu_idx, 0.0)
+            if u_cur + u_new <= 1.0:
+                return True
+        return False
+
+
+        # MIN CPU USAGE
+    def choose_cpu_on_node_cpu_mode(node_name, cpu_count, u_new):
+        node_cpu_map, _u_unknown = _cpu_map_with_unknown(node_name, cpu_count)
+
+        for cpu_idx in range(cpu_count):
+            u_cur = node_cpu_map.get(cpu_idx, 0.0)
+            if u_cur + u_new <= 1.0:
+                return cpu_idx
+
+        return None
+
+        #LOAD_BALANCER
+    #     best_cpu = None
+    #     best_u = None
+
+    #     for cpu_idx in range(cpu_count):
+    #         u_cur = node_cpu_map.get(cpu_idx, 0.0)
+    #         if u_cur + u_new <= 1.0:
+    #             if best_u is None or u_cur < best_u:
+    #                 best_u = u_cur
+    #                 best_cpu = cpu_idx
+
+    #     return best_cpu
+
+
+    def can_place_on_node_node_mode(node_name, cpu_count, u_new):
+        node_map = state_manager.rt_util_per_node()
+        u_node = node_map.get(node_name, 0.0)
+        # ΣU_i <= (m+1)/2  (m = cpu_count)
+        limit = (cpu_count + 1) / 2.0
+        return u_node + u_new <= limit
+
+
+    """
+    1) node filtering
+    2) kettos celfv: RT esetben minel kevesebb node-ot hasznaljunk.
+    """
+    def select_node_for_rt(pod, nodes, mode="cpu"):
+        u_new, deadline = get_rt_params(pod)
+
+        if u_new is None or deadline is None:
+            return None, None, None, None
+        if u_new > 1.0 + 1e-9:
+            return None, None, None, None
+
+        nodes = filter_nodes_for_rt(pod, nodes)
+
+        if mode == "node":
+            for node in nodes:
+                node_name = node.metadata.name
+                cpu_count = k8s_client.get_node_cpu_count(node)
+                # node-mode-ban CPU indexet nem hasznaljuk
+                if can_place_on_node_node_mode(node_name, cpu_count, u_new):
+                    return node_name, None, u_new, deadline
+            return None, None, None, None
+
+        # mode == "cpu"
+        for node in nodes:
+            node_name = node.metadata.name
+            cpu_count = k8s_client.get_node_cpu_count(node)
+
+            if can_place_on_node_cpu_mode(node_name, cpu_count, u_new):
+                cpu_idx = choose_cpu_on_node_cpu_mode(node_name, cpu_count, u_new)
+                if cpu_idx is None:
+                    continue
+                return node_name, cpu_idx, u_new, deadline
+
+        return None, None, None, None  # nem talaltunk megfelelo node-ot
+
+
+    def _cpu_map_with_unknown(node_name: str, cpu_count: int):
+        raw = state_manager.rt_util_per_node_cpu().get(node_name, {})
+        u_unknown = raw.get(-1, 0.0)
+
+        if cpu_count <= 0:
+            return {}, u_unknown
+
+        add = u_unknown / float(cpu_count)
+
+        cooked = {}
+        for cpu_idx in range(cpu_count):
+            cooked[cpu_idx] = raw.get(cpu_idx, 0.0) + add
+
+        return cooked, u_unknown
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"rt_scheduler.py":"from . import state_manager\nfrom . import k8s_client\n\nNODE_BLACKLIST = {\n    \"node1.rtkube.cloudnet-pg0.wisc.cloudlab.us\",\n}\n\ndef is_rt_pod(pod):\n    labels = pod.metadata.labels or {}\n    return labels.get(\"criticality\") == \"rt\"\n\n\ndef _safe_float(val, default):\n    if val is None:\n        return default\n    try:\n        s = str(val).strip()\n        if s == \"\":\n            return default\n        return float(s)\n    except ValueError:\n        return default\n\nOPENFAAS_NODE_SELECTOR_ANNOTATION = \"com.openfaas.k8s.node-selector\"\n\n\ndef _openfaas_annotation_node_selector(pod) -\u003e dict:\n    ann = getattr(pod.metadata, \"annotations\", None) or {}\n    raw = ann.get(OPENFAAS_NODE_SELECTOR_ANNOTATION, \"\")\n    result = {}\n\n    # OpenFaaS stores selectors as strings like: kubernetes.io/hostname=beta\n    for item in str(raw).split(\",\"):\n        item = item.strip()\n        if not item or \"=\" not in item:\n            continue\n        key, value = item.split(\"=\", 1)\n        key = key.strip()\n        value = value.strip()\n        if key and value:\n            result[key] = value\n\n    return result\n\n\ndef _matches_node_selector(pod, node) -\u003e bool:\n    sel = dict(getattr(pod.spec, \"node_selector\", None) or {})\n    sel.update(_openfaas_annotation_node_selector(pod))\n\n    if not sel:\n        return True\n    labels = getattr(node.metadata, \"labels\", None) or {}\n    for k, v in sel.items():\n        if labels.get(k) != v:\n            return False\n    return True\n\ndef get_rt_params(pod):\n    ann = pod.metadata.annotations or {}\n    if \"rt-q-ms\" not in ann or \"rt-p-ms\" not in ann:\n        return None, None\n    q_ms = _safe_float(ann.get(\"rt-q-ms\"), None)\n    p_ms = _safe_float(ann.get(\"rt-p-ms\"), None)\n    if q_ms is None or p_ms is None or p_ms \u003c= 0:\n        return None, None\n    u = q_ms / p_ms\n    return u, p_ms\n\n\ndef filter_nodes_for_rt(pod, nodes):\n    \"\"\"\n    Itt lehetne CPU/memoria predicate\n    TODO\n    \"\"\"\n    result = []\n    for n in nodes:\n        node_name = getattr(n.metadata, \"name\", None)\n        if not node_name:\n            continue\n        if not _matches_node_selector(pod, n):\n            continue\n        if node_name in NODE_BLACKLIST:\n            continue\n        conds = getattr(n.status, \"conditions\", []) or []\n        ready = any(c.type == \"Ready\" and c.status == \"True\" for c in conds)\n        if not ready:\n            continue\n\n        result.append(n)\n    return result\n\n\ndef can_place_on_node_cpu_mode(node_name, cpu_count, u_new):\n    node_cpu_map, _u_unknown = _cpu_map_with_unknown(node_name, cpu_count)\n    for cpu_idx in range(cpu_count):\n        u_cur = node_cpu_map.get(cpu_idx, 0.0)\n        if u_cur + u_new \u003c= 1.0:\n            return True\n    return False\n\n\n    # MIN CPU USAGE\ndef choose_cpu_on_node_cpu_mode(node_name, cpu_count, u_new):\n    node_cpu_map, _u_unknown = _cpu_map_with_unknown(node_name, cpu_count)\n\n    for cpu_idx in range(cpu_count):\n        u_cur = node_cpu_map.get(cpu_idx, 0.0)\n        if u_cur + u_new \u003c= 1.0:\n            return cpu_idx\n\n    return None\n\n    #LOAD_BALANCER\n#     best_cpu = None\n#     best_u = None\n\n#     for cpu_idx in range(cpu_count):\n#         u_cur = node_cpu_map.get(cpu_idx, 0.0)\n#         if u_cur + u_new \u003c= 1.0:\n#             if best_u is None or u_cur \u003c best_u:\n#                 best_u = u_cur\n#                 best_cpu = cpu_idx\n\n#     return best_cpu\n\n\ndef can_place_on_node_node_mode(node_name, cpu_count, u_new):\n    node_map = state_manager.rt_util_per_node()\n    u_node = node_map.get(node_name, 0.0)\n    # ΣU_i \u003c= (m+1)/2  (m = cpu_count)\n    limit = (cpu_count + 1) / 2.0\n    return u_node + u_new \u003c= limit\n\n\n\"\"\"\n1) node filtering\n2) kettos celfv: RT esetben minel kevesebb node-ot hasznaljunk.\n\"\"\"\ndef select_node_for_rt(pod, nodes, mode=\"cpu\"):\n    u_new, deadline = get_rt_params(pod)\n\n    if u_new is None or deadline is None:\n        return None, None, None, None\n    if u_new \u003e 1.0 + 1e-9:\n        return None, None, None, None\n\n    nodes = filter_nodes_for_rt(pod, nodes)\n\n    if mode == \"node\":\n        for node in nodes:\n            node_name = node.metadata.name\n            cpu_count = k8s_client.get_node_cpu_count(node)\n            # node-mode-ban CPU indexet nem hasznaljuk\n            if can_place_on_node_node_mode(node_name, cpu_count, u_new):\n                return node_name, None, u_new, deadline\n        return None, None, None, None\n\n    # mode == \"cpu\"\n    for node in nodes:\n        node_name = node.metadata.name\n        cpu_count = k8s_client.get_node_cpu_count(node)\n\n        if can_place_on_node_cpu_mode(node_name, cpu_count, u_new):\n            cpu_idx = choose_cpu_on_node_cpu_mode(node_name, cpu_count, u_new)\n            if cpu_idx is None:\n                continue\n            return node_name, cpu_idx, u_new, deadline\n\n    return None, None, None, None  # nem talaltunk megfelelo node-ot\n\n\ndef _cpu_map_with_unknown(node_name: str, cpu_count: int):\n    raw = state_manager.rt_util_per_node_cpu().get(node_name, {})\n    u_unknown = raw.get(-1, 0.0)\n\n    if cpu_count \u003c= 0:\n        return {}, u_unknown\n\n    add = u_unknown / float(cpu_count)\n\n    cooked = {}\n    for cpu_idx in range(cpu_count):\n        cooked[cpu_idx] = raw.get(cpu_idx, 0.0) + add\n\n    return cooked, u_unknown\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"rtfaas-scheduler-rt-scheduler","namespace":"kube-system"}}
+  creationTimestamp: "2026-06-03T18:32:37Z"
+  name: rtfaas-scheduler-rt-scheduler
+  namespace: kube-system
+  resourceVersion: "9201032"
+  uid: fc8fefbb-a748-4314-8e06-8f8ecb3c687b

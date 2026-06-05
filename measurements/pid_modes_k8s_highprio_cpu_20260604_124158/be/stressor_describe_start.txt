@@ -1,0 +1,66 @@
+Name:                 rtfaas-cpu-stressor-be-1780569733
+Namespace:            default
+Priority:             1000000
+Priority Class Name:  rtfaas-high-priority-stressor
+Service Account:      default
+Node:                 beta/192.168.0.201
+Start Time:           Thu, 04 Jun 2026 12:37:07 +0200
+Labels:               app=rtfaas-cpu-stressor
+                      measurement=k8s-highprio-cpu
+                      mode=be
+Annotations:          <none>
+Status:               Running
+IP:                   10.244.1.189
+IPs:
+  IP:  10.244.1.189
+Containers:
+  stressor:
+    Container ID:  containerd://21fd970e6079880bdc20a3e0694ffc4da1ce704493cc4066ff4e194dee2d4f3e
+    Image:         botondbencs/edf-pidserver:latest
+    Image ID:      docker.io/botondbencs/edf-pidserver@sha256:bd50c83ba81c706b2240ba1ef02ab3d5d704054e546e12750d182a5d8a4eb5e0
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      echo starting k8s high-priority CPU stressor mode=be
+      for i in 1 2 3 4; do python -c "while True: pass" & done
+      wait
+      
+    State:          Running
+      Started:      Thu, 04 Jun 2026 12:37:08 +0200
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      memory:  256Mi
+    Requests:
+      cpu:        3500m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-fwb8z (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-fwb8z:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              kubernetes.io/hostname=beta
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Pulled     5m6s  kubelet            spec.containers{stressor}: Container image "botondbencs/edf-pidserver:latest" already present on machine and can be accessed by the pod
+  Normal  Created    5m6s  kubelet            spec.containers{stressor}: Container created
+  Normal  Started    5m6s  kubelet            spec.containers{stressor}: Container started
+  Normal  Scheduled  1s    default-scheduler  Successfully assigned default/rtfaas-cpu-stressor-be-1780569733 to beta

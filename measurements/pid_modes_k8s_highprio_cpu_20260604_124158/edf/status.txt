@@ -1,0 +1,13 @@
+=== mode=edf deploy=pidserver_edf.yaml ===
+Waiting for deployment "pidserver" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "pidserver" rollout to finish: 1 old replicas are pending termination...
+deployment "pidserver" successfully rolled out
+stressor_pod=rtfaas-cpu-stressor-edf-1780570084
+deployment.apps/robot restarted
+Waiting for deployment "robot" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "robot" rollout to finish: 1 old replicas are pending termination...
+deployment "robot" successfully rolled out
+robot_pod=robot-647fb8448-d74x8
+warmup 10s
+start_utc=2026-06-04T10:48:20Z
+end_utc=2026-06-04T10:50:20Z

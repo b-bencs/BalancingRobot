@@ -1,0 +1,14 @@
+apiVersion: scheduling.k8s.io/v1
+description: High-priority CPU stressor used for RT-FaaS robot measurements.
+kind: PriorityClass
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"scheduling.k8s.io/v1","description":"High-priority CPU stressor used for RT-FaaS robot measurements.","globalDefault":false,"kind":"PriorityClass","metadata":{"annotations":{},"name":"rtfaas-high-priority-stressor"},"preemptionPolicy":"PreemptLowerPriority","value":1000000}
+  creationTimestamp: "2026-06-04T10:40:00Z"
+  generation: 1
+  name: rtfaas-high-priority-stressor
+  resourceVersion: "9290142"
+  uid: a2e0626e-5610-48e3-b03f-6513c2a1bfa7
+preemptionPolicy: PreemptLowerPriority
+value: 1000000

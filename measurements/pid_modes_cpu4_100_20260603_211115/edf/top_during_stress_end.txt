@@ -1,0 +1,61 @@
+top - 21:13:42 up 77 days,  8:49,  1 user,  load average: 5.44, 4.30, 2.44
+Tasks: 259 total,   5 running, 254 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 86.7 us, 10.8 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  2.4 si,  0.0 st
+MiB Mem :  11843.9 total,   1112.4 free,   2282.0 used,   8449.5 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.   9080.2 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+1687132 muuurk    20   0   42728   6240   3632 R  77.8   0.1   1:47.75 stress-+
+1687130 muuurk    20   0   42728   6128   3520 R  72.2   0.1   1:50.32 stress-+
+1687131 muuurk    20   0   42728   6240   3632 R  61.1   0.1   1:48.23 stress-+
+3616125 root      20   0  246544  13064   7932 S  61.1   0.1   4:12.05 polkitd
+1687129 muuurk    20   0   42728   6136   3528 R  50.0   0.1   1:47.22 stress-+
+1686951 root      rt   0   47768  28892   8108 S  22.2   0.2   0:25.84 python
+    803 message+  20   0   11348   6952   4024 S  11.1   0.1   6:51.69 dbus-da+
+    807 root      20   0  552640  21396  15932 S  11.1   0.2  18:56.49 Network+
+1686930 root      20   0 1234736  13772   6356 S  11.1   0.1   0:23.31 fwatchd+
+      1 root      20   0  168552  13728   7988 S   5.6   0.1   6:13.81 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:02.09 kthreadd
+      3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_wo+
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      7 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     12 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     13 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     15 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     16 root      20   0       0      0      0 S   0.0   0.0   2:51.52 ksoftir+
+     17 root      20   0       0      0      0 I   0.0   0.0  91:56.16 rcu_pre+
+     18 root      rt   0       0      0      0 S   0.0   0.0   1:15.69 migrati+
+     19 root     -51   0       0      0      0 S   0.0   0.0  68:00.20 idle_in+
+     20 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/0
+     21 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/2
+     22 root     -51   0       0      0      0 S   0.0   0.0  67:55.99 idle_in+
+     23 root      rt   0       0      0      0 S   0.0   0.0   1:14.78 migrati+
+     24 root      20   0       0      0      0 S   0.0   0.0   2:05.89 ksoftir+
+     27 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/1
+     28 root     -51   0       0      0      0 S   0.0   0.0  67:57.73 idle_in+
+     29 root      rt   0       0      0      0 S   0.0   0.0   1:13.49 migrati+
+     30 root      20   0       0      0      0 S   0.0   0.0   2:18.42 ksoftir+
+
+    PID    PPID STAT %CPU COMMAND         COMMAND
+1687130 1687128 R    79.3 stress-ng       stress-ng-cpu [run]
+1687131 1687128 R    77.8 stress-ng       stress-ng-cpu [run]
+1687132 1687128 R    77.5 stress-ng       stress-ng-cpu [run]
+1687129 1687128 R    77.1 stress-ng       stress-ng-cpu [run]
+1686951 1686930 S    17.7 python          python index.py
+1686930 1686882 Ssl  15.9 fwatchdog       fwatchdog
+  58550       1 Ssl   3.6 kubelet         /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml
+1687834  250938 Ss    3.0 sshd            sshd: muuurk [priv]
+ 781558  781196 Ssl   2.5 grafana         grafana server --homepath=/usr/share/grafana --config=/etc/grafana/grafana.ini --packaging=docker cfg:default.log.mode=console cfg:default.paths.data=/var/lib/grafana cfg:default.paths.logs=/var/log/grafana cfg:default.paths.plugins=/var/lib/grafana/plugins cfg:default.paths.provisioning=/etc/grafana/provisioning
+  58472       1 Ssl   1.7 containerd      /usr/bin/containerd
+1686882       1 Sl    1.4 containerd-shim /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 0006e427cad9357b25d442fe586fe456221157233e074953e5d5d753439a08f6 -address /run/containerd/containerd.sock
+  59025   58650 Ssl   0.3 flanneld        /opt/bin/flanneld --ip-masq --kube-subnet-mgr
+   1447       1 Sl    0.2 teamviewerd     /opt/teamviewer/tv_bin/teamviewerd -d
+  41896       1 Ss    0.2 systemd-oomd    /lib/systemd/systemd-oomd
+  41776       1 S<s   0.1 systemd-journal /lib/systemd/systemd-journald
+      1       0 Ss    0.0 systemd         /lib/systemd/systemd --system --deserialize 59 splash
+      2       0 S     0.0 kthreadd        [kthreadd]
+      3       2 S     0.0 pool_workqueue_ [pool_workqueue_release]
+      4       2 I<    0.0 kworker/R-rcu_g [kworker/R-rcu_g]

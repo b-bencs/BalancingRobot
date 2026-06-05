@@ -1,0 +1,4 @@
+condition,mode,robot_pod,pid_node,samples,duration_s,sample_hz,min_angle,max_angle,max_abs_angle,fell,fall_samples_abs_ge_0_785,influx_timeout_samples,log_main_thread_timeouts,log_exceptions_or_worker_catches,mean_delta_time_s,p95_delta_time_s,pid_request_count_from_logs,pid_request_mean_ms,pid_request_p95_ms,pid_request_max_ms,robot_restarts_before_after
+net20,be,robot-569bb9748d-wqd8s,beta,6356,110.432,57.556,-2.029999971,0.782537162,2.029999971,yes,5826,397,426,846,0.034828598,0.131029725,719,49.361,60.936,70.865,0->2
+net20,gd,robot-6ffd4c89bd-xgjp9,beta,10995,110.07,99.891,-2.029999971,-2.029999971,2.029999971,yes,10995,0,16,30,0.0100115,0.010000005,28,48.966,56.549,64.625,0->0
+net20,edf,robot-868f69d557-btffz,beta,11017,110.264,99.915,2.029999971,2.029999971,2.029999971,yes,11017,0,22,42,0.010009166,0.010000005,42,47.141,61.259,70.984,0->0

@@ -1,0 +1,11 @@
+outdir=../measurements/pid_modes_k8s_highprio_cpu_20260604_124158
+measure_seconds=120
+warmup_seconds=10
+stress_type=kubernetes_high_priority_pod
+stress_node=beta
+priority_class=rtfaas-high-priority-stressor
+stress_cpu_request=3500m
+stress_memory_request=64Mi
+stress_memory_limit=256Mi
+stress_processes=4
+stress_image=botondbencs/edf-pidserver:latest

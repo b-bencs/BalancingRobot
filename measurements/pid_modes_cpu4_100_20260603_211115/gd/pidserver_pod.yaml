@@ -1,0 +1,182 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      com.openfaas.k8s.node-selector: kubernetes.io/hostname=beta
+      prometheus.io.scrape: "false"
+    creationTimestamp: "2026-06-03T19:13:47Z"
+    generateName: pidserver-c54f88c4c-
+    generation: 1
+    labels:
+      criticality: be
+      faas_function: pidserver
+      pod-template-hash: c54f88c4c
+      uid: "541623277"
+    name: pidserver-c54f88c4c-fbtg4
+    namespace: openfaas-fn
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: pidserver-c54f88c4c
+      uid: 530072c5-2da8-426f-b35a-5315680026c3
+    resourceVersion: "9205736"
+    uid: ee749a6f-db91-41ad-a69a-ff5830d5fccc
+  spec:
+    containers:
+    - env:
+      - name: fprocess
+        value: python index.py
+      image: botondbencs/edf-pidserver:latest
+      imagePullPolicy: Always
+      livenessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /_/health
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 2
+        periodSeconds: 2
+        successThreshold: 1
+        timeoutSeconds: 1
+      name: pidserver
+      ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /_/health
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 2
+        periodSeconds: 2
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources:
+        limits:
+          cpu: 300m
+        requests:
+          cpu: 300m
+      securityContext:
+        privileged: false
+        readOnlyRootFilesystem: false
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-rwxw9
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: beta
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-rwxw9
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:08:46Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:08:44Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:08:49Z"
+      observedGeneration: 1
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:08:49Z"
+      observedGeneration: 1
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-06-03T19:13:47Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - allocatedResources:
+        cpu: 300m
+      containerID: containerd://0fd9bbeab5a44e64c7c4828b1eb511fa392e474689205d6c89fc8beed03c7725
+      image: docker.io/botondbencs/edf-pidserver:latest
+      imageID: docker.io/botondbencs/edf-pidserver@sha256:bd50c83ba81c706b2240ba1ef02ab3d5d704054e546e12750d182a5d8a4eb5e0
+      lastState: {}
+      name: pidserver
+      ready: true
+      resources:
+        limits:
+          cpu: 300m
+        requests:
+          cpu: 300m
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2026-06-03T19:08:46Z"
+      user:
+        linux:
+          gid: 101
+          supplementalGroups:
+          - 101
+          uid: 100
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-rwxw9
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 192.168.0.201
+    hostIPs:
+    - ip: 192.168.0.201
+    observedGeneration: 1
+    phase: Running
+    podIP: 10.244.1.185
+    podIPs:
+    - ip: 10.244.1.185
+    qosClass: Burstable
+    startTime: "2026-06-03T19:08:44Z"
+kind: List
+metadata:
+  resourceVersion: ""

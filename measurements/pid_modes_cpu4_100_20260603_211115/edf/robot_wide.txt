@@ -1,0 +1,2 @@
+NAME                     READY   STATUS    RESTARTS   AGE   IP             NODE    NOMINATED NODE   READINESS GATES
+robot-64fc7c9d44-t6v89   1/1     Running   0          4s    10.244.2.184   gamma   <none>           <none>

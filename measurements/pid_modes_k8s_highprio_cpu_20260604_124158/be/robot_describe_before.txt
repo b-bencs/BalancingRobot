@@ -1,0 +1,59 @@
+Name:             robot-cdcd6bd76-sp6cj
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gamma/192.168.0.203
+Start Time:       Thu, 04 Jun 2026 12:42:04 +0200
+Labels:           app=robot
+                  pod-template-hash=cdcd6bd76
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-06-04T12:42:14+02:00
+Status:           Running
+IP:               10.244.2.185
+IPs:
+  IP:           10.244.2.185
+Controlled By:  ReplicaSet/robot-cdcd6bd76
+Containers:
+  robot:
+    Container ID:  containerd://09ebd176613ae8f17c28007df4005de0cf7fd2f8ad1e91dd60f6375926fdb039
+    Image:         botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603
+    Image ID:      docker.io/botondbencs/edfrobotcontainer_ld2@sha256:56c6dd88f18389709d9c85453bbe08a57e7e808678ad2309a0bd92a6770524ed
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      ./myapp
+      100
+      100
+      true
+    State:          Running
+      Started:      Thu, 04 Jun 2026 12:42:05 +0200
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-sbg59 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-sbg59:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              job=robot
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Pulling    14s   kubelet            spec.containers{robot}: Pulling image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603"
+  Normal  Pulled     13s   kubelet            spec.containers{robot}: Successfully pulled image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603" in 709ms (709ms including waiting). Image size: 824763809 bytes.
+  Normal  Created    13s   kubelet            spec.containers{robot}: Container created
+  Normal  Started    13s   kubelet            spec.containers{robot}: Container started
+  Normal  Scheduled  4s    default-scheduler  Successfully assigned default/robot-cdcd6bd76-sp6cj to gamma

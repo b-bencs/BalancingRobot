@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "5"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"rtfaas-scheduler"},"name":"rtfaas-scheduler","namespace":"kube-system"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"rtfaas-scheduler"}},"strategy":{},"template":{"metadata":{"labels":{"app":"rtfaas-scheduler"}},"spec":{"containers":[{"image":"botondbencs/rtfaas-scheduler:min-cpu","name":"rtfaas-scheduler","resources":{}}]}}},"status":{}}
+  creationTimestamp: "2026-06-03T09:59:11Z"
+  generation: 5
+  labels:
+    app: rtfaas-scheduler
+  name: rtfaas-scheduler
+  namespace: kube-system
+  resourceVersion: "9201110"
+  uid: bb0023bd-4efa-41cd-8531-120129ee1931
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: rtfaas-scheduler
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: rtfaas-scheduler
+    spec:
+      containers:
+      - image: botondbencs/rtfaas-scheduler:min-cpu
+        imagePullPolicy: IfNotPresent
+        name: rtfaas-scheduler
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app/rtfaas_scheduler/k8s_client.py
+          name: rtfaas-k8s-client
+          subPath: k8s_client.py
+        - mountPath: /app/rtfaas_scheduler/rt_scheduler.py
+          name: rtfaas-rt-scheduler
+          subPath: rt_scheduler.py
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/hostname: alpha
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: rtfaas-scheduler-sa
+      serviceAccountName: rtfaas-scheduler-sa
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: rtfaas-scheduler-k8s-client
+        name: rtfaas-k8s-client
+      - configMap:
+          defaultMode: 420
+          name: rtfaas-scheduler-rt-scheduler
+        name: rtfaas-rt-scheduler
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-06-03T10:01:10Z"
+    lastUpdateTime: "2026-06-03T10:01:10Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-06-03T09:59:11Z"
+    lastUpdateTime: "2026-06-03T18:32:38Z"
+    message: ReplicaSet "rtfaas-scheduler-7db8b7787b" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 5
+  readyReplicas: 1
+  replicas: 1
+  terminatingReplicas: 0
+  updatedReplicas: 1

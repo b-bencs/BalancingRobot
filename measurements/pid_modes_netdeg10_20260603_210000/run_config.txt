@@ -1,0 +1,8 @@
+outdir=../measurements/pid_modes_netdeg10_20260603_210000
+measure_seconds=120
+warmup_seconds=10
+tc_host=beta
+tc_interface=flannel.1
+netem_delay=10ms
+netem_jitter=2ms
+netem_distribution=normal

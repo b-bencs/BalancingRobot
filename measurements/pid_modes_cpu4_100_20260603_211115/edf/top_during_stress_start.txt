@@ -1,0 +1,30 @@
+top - 21:11:27 up 77 days,  8:47,  1 user,  load average: 4.28, 3.58, 1.95
+Tasks: 256 total,   5 running, 251 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 94.7 us,  5.3 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  11843.9 total,   1142.9 free,   2255.9 used,   8445.1 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.   9106.3 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+1687132 muuurk    20   0   42728   6240   3632 R  94.1   0.1   0:02.66 stress-+
+1687129 muuurk    20   0   42728   6136   3528 R  88.2   0.1   0:02.76 stress-+
+1687130 muuurk    20   0   42728   6128   3520 R  88.2   0.1   0:02.85 stress-+
+1687131 muuurk    20   0   42728   6240   3632 R  70.6   0.1   0:02.76 stress-+
+3616125 root      20   0  246544  13064   7932 S  23.5   0.1   4:11.60 polkitd
+    807 root      20   0  552640  21396  15932 S   5.9   0.2  18:56.39 Network+
+1687220 muuurk    20   0   16856   4372   3524 R   5.9   0.0   0:00.01 top
+      1 root      20   0  168552  13728   7988 S   0.0   0.1   6:13.76 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:02.09 kthreadd
+      3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_wo+
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      7 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     12 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     13 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     15 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     16 root      20   0       0      0      0 S   0.0   0.0   2:51.52 ksoftir+
+     17 root      20   0       0      0      0 I   0.0   0.0  91:55.78 rcu_pre+
+     18 root      rt   0       0      0      0 S   0.0   0.0   1:15.69 migrati+
+     19 root     -51   0       0      0      0 S   0.0   0.0  67:46.35 idle_in+
+     20 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/0

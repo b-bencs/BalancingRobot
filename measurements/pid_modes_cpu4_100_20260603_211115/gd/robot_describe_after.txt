@@ -1,0 +1,69 @@
+Name:             robot-78c7868b76-8f449
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             gamma/192.168.0.203
+Start Time:       Wed, 03 Jun 2026 21:13:49 +0200
+Labels:           app=robot
+                  pod-template-hash=78c7868b76
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-06-03T21:13:59+02:00
+Status:           Running
+IP:               10.244.2.183
+IPs:
+  IP:           10.244.2.183
+Controlled By:  ReplicaSet/robot-78c7868b76
+Containers:
+  robot:
+    Container ID:  containerd://ab8769489d395f0f98a3d5544cba0835603f24912f30fae97a4e70993f43920b
+    Image:         botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603
+    Image ID:      docker.io/botondbencs/edfrobotcontainer_ld2@sha256:56c6dd88f18389709d9c85453bbe08a57e7e808678ad2309a0bd92a6770524ed
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      ./myapp
+      100
+      100
+      true
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    139
+      Started:      Wed, 03 Jun 2026 21:15:50 +0200
+      Finished:     Wed, 03 Jun 2026 21:15:56 +0200
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    139
+      Started:      Wed, 03 Jun 2026 21:13:50 +0200
+      Finished:     Wed, 03 Jun 2026 21:15:48 +0200
+    Ready:          False
+    Restart Count:  1
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-kbv98 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-kbv98:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              job=robot
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  Normal   Pulled     2m23s                kubelet            spec.containers{robot}: Successfully pulled image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603" in 743ms (743ms including waiting). Image size: 824763809 bytes.
+  Normal   Scheduled  2m14s                default-scheduler  Successfully assigned default/robot-78c7868b76-8f449 to gamma
+  Normal   Pulling    24s (x2 over 2m23s)  kubelet            spec.containers{robot}: Pulling image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603"
+  Normal   Created    23s (x2 over 2m23s)  kubelet            spec.containers{robot}: Container created
+  Normal   Started    23s (x2 over 2m23s)  kubelet            spec.containers{robot}: Container started
+  Normal   Pulled     23s                  kubelet            spec.containers{robot}: Successfully pulled image "botondbencs/edfrobotcontainer_ld2:update-pid-openfaas-debug-20260603" in 739ms (739ms including waiting). Image size: 824763809 bytes.
+  Warning  BackOff    17s                  kubelet            spec.containers{robot}: Back-off restarting failed container robot in pod robot-78c7868b76-8f449_default(380dd23d-7e7e-461c-982c-30a12f709fe5)

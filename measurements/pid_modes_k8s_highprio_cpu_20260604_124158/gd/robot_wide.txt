@@ -1,0 +1,2 @@
+NAME                     READY   STATUS    RESTARTS   AGE   IP             NODE    NOMINATED NODE   READINESS GATES
+robot-784bbd4b5c-lljnf   1/1     Running   0          4s    10.244.2.186   gamma   <none>           <none>

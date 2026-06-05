@@ -1,0 +1,127 @@
+@startuml
+title Current Measurement Workflow with OpenFaaS PID and RT-FaaS
+
+start
+
+partition "Operator / measurement script" {
+  :Select measurement type;
+  if (Measurement type?) then (clean)
+    :No external degradation;
+  elseif (network)
+    :Apply tc netem on beta/flannel.1;
+    note right
+      Used examples:
+      10ms +/- 2ms
+      20ms +/- 5ms
+    end note
+  else (cpu)
+    :Create Kubernetes high-priority stressor pod;
+    note right
+      priorityClassName:
+      rtfaas-high-priority-stressor
+      priority=1000000
+      cpu request=3500m
+      node=beta
+    end note
+  endif
+
+  :Select PID mode: BE, GD, or EDF;
+  :faas-cli deploy selected pidserver YAML;
+}
+
+partition "OpenFaaS / Kubernetes" {
+  if (PID mode?) then (BE)
+    :Deploy BestEffort pidserver;
+    :Default scheduler places pod on beta;
+  elseif (GD)
+    :Deploy pidserver with CPU request/limit 300m;
+    :Default scheduler places pod on beta;
+  else (EDF)
+    :Deploy RT pidserver with EDF runtime/deadline/period;
+    :Pod uses rtfaas-scheduler;
+  endif
+}
+
+partition "rtfaas-scheduler on alpha" {
+  if (EDF pod pending?) then (yes)
+    :Read RT annotations;
+    :Honor OpenFaaS node-selector annotation;
+    :Bind pidserver pod to beta;
+    :Record utilization U=0.4;
+  else (no)
+    :No RT scheduling action;
+  endif
+}
+
+partition "PID node beta" {
+  :pidserver pod is running;
+  if (CPU stress measurement?) then (yes)
+    :High-priority stressor pod burns CPU on beta;
+  else (no)
+  endif
+}
+
+partition "Robot node gamma" {
+  :Restart robot deployment;
+  :Robot starts ./myapp 100 100 true;
+  :Create InfluxDB writer;
+  :Initialize x, psi, phi PID state;
+  :Warm up for 10 seconds;
+
+  repeat
+    :Wait until frame is due\n(delta_time > 1/FPS);
+
+    if (abs(phi) <= 0.785?) then (balanced)
+      :Advance robot dynamics\nusing previous motor forces;
+      :Save PID state, rotation, and motor forces;
+
+      fork
+        partition "Correction worker thread" {
+          :POST x PID request;
+          :POST psi PID request;
+          :Compute tilt = -PID_x + phi;
+          :POST phi PID request;
+          :Update rotation and motor forces;
+          :Notify main thread;
+        }
+      fork again
+        :Main thread waits up to response_timeout\n(currently 100 ms);
+      end fork
+
+      if (PID correction completed in time?) then (yes)
+        :Keep new PID state and motor forces;
+        :timeout_happened = false;
+        :Update PID reference time;
+      else (timeout or parse error)
+        :Restore saved PID state and motor forces;
+        :timeout_happened = true;
+      endif
+    else (fallen)
+      :Set saturated fall angle\nphi = +/-2.03;
+      :Skip PID correction;
+    endif
+
+    :Write angle, timeout, and delta_time to InfluxDB;
+    :Reset timeout_happened flag;
+  repeat while (measurement window still active?) is (yes)
+}
+
+partition "InfluxDB / logs / plots" {
+  :Query InfluxDB by robot pod name;
+  :Save angle.csv;
+  :Save robot logs, pod YAML, scheduler logs;
+  :Compute summary metrics;
+  :Generate plots and documentation;
+}
+
+partition "Cleanup" {
+  if (network degradation?) then (yes)
+    :Remove tc qdisc from beta/flannel.1;
+  endif
+  if (CPU stress measurement?) then (yes)
+    :Delete high-priority stressor pod;
+  endif
+}
+
+stop
+@enduml

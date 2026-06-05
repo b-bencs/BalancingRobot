@@ -1,0 +1,4 @@
+measurements/
+docs/
+*.log
+.gitignore

@@ -1,0 +1,7 @@
+outdir=../measurements/pid_modes_cpu4_100_20260603_211115
+measure_seconds=120
+warmup_seconds=10
+stress_host=beta
+stress_command=stress-ng --cpu 4 --cpu-load 100 --timeout 180s --metrics-brief
+stress_cpus=4
+stress_cpu_load=100

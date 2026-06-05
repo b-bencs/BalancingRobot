@@ -1,0 +1,2 @@
+NAME                    READY   STATUS    RESTARTS   AGE   IP             NODE    NOMINATED NODE   READINESS GATES
+robot-cdcd6bd76-sp6cj   1/1     Running   0          4s    10.244.2.185   gamma   <none>           <none>

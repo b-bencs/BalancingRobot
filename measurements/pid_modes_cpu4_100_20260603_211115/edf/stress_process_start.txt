@@ -1,0 +1,2 @@
+    PID    PPID STAT %CPU COMMAND         COMMAND
+1687128       1 SL    0.0 stress-ng       stress-ng --cpu 4 --cpu-load 100 --timeout 180s --metrics-brief

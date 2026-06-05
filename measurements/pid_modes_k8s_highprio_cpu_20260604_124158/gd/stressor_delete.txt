@@ -1,0 +1,1 @@
+pod "rtfaas-cpu-stressor-gd-1780569908" deleted from default namespace

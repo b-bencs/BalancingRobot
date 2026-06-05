@@ -1,0 +1,13 @@
+=== mode=gd deploy=pidserver_gd.yaml ===
+Waiting for deployment "pidserver" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "pidserver" rollout to finish: 1 old replicas are pending termination...
+deployment "pidserver" successfully rolled out
+stress_started_pid=1685939
+deployment.apps/robot restarted
+Waiting for deployment "robot" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "robot" rollout to finish: 1 old replicas are pending termination...
+deployment "robot" successfully rolled out
+robot_pod=robot-78c7868b76-8f449
+warmup 10s
+start_utc=2026-06-03T19:14:13Z
+end_utc=2026-06-03T19:16:13Z
