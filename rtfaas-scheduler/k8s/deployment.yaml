@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtfaas-scheduler
+  namespace: kube-system
+  labels:
+    app: rtfaas-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtfaas-scheduler
+  template:
+    metadata:
+      labels:
+        app: rtfaas-scheduler
+    spec:
+      serviceAccountName: rtfaas-scheduler-sa
+      nodeSelector:
+        kubernetes.io/hostname: alpha
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: rtfaas-scheduler
+        image: botondbencs/rtfaas-scheduler:min-cpu
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SCHEDULER_NAME
+          value: rtfaas-scheduler
+        - name: EDF_MODE
+          value: cpu
+        - name: RECHECK_INTERVAL_SEC
+          value: "10.0"
+        - name: RT_STATE_FILE
+          value: /state/rt_state.txt
+        volumeMounts:
+        - name: rt-state
+          mountPath: /state
+      volumes:
+      - name: rt-state
+        emptyDir: {}

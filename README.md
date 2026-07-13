@@ -1,5 +1,31 @@
 # BalancingRobot
 
+## RT-FaaS scheduler source
+
+The custom RT-FaaS scheduler used by the EDF measurements is available in:
+
+```
+rtfaas-scheduler/
+```
+
+It contains the Python scheduler package, a Dockerfile, RBAC, and a Kubernetes deployment manifest. Build and deploy it with:
+
+```
+cd rtfaas-scheduler
+docker build -t botondbencs/rtfaas-scheduler:min-cpu .
+docker push botondbencs/rtfaas-scheduler:min-cpu
+kubectl apply -f k8s/rbac.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl -n kube-system rollout status deploy/rtfaas-scheduler
+```
+
+Verify it with:
+
+```
+kubectl -n kube-system get pod -l app=rtfaas-scheduler -o wide
+kubectl -n kube-system logs -f deploy/rtfaas-scheduler --tail=100
+```
+
 ## Run the simulator in Kubernetes
 1. Build the robot simulator in Docker
    ```

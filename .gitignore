@@ -1,4 +1,9 @@
-measurements/
+measurements/*
+!measurements/
+!measurements/MEASUREMENT_DOCUMENTATION_BILINGUAL.md
+!measurements/README.md
+!measurements/run_k8s_cpu_timeout_boundary.sh
+!measurements/run_network_degradation.sh
 docs/
 *.log
 .gitignore
